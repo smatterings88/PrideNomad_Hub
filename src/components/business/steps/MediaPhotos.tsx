@@ -1,6 +1,8 @@
 import React from 'react';
 import ImageUpload from '../../ui/ImageUpload';
 import { Video, ToggleLeft, ToggleRight } from 'lucide-react';
+import { validateUrl } from '../../../utils/validation';
+import { TIER_LIMITS } from '../../../utils/constants';
 
 interface MediaPhotosProps {
   formData: any;
@@ -21,6 +23,8 @@ export default function MediaPhotos({
   setFormData,
   setError
 }: MediaPhotosProps) {
+  const [validationErrors, setValidationErrors] = React.useState<{ [key: string]: string }>({});
+
   // Safety check to prevent errors when formData is undefined
   if (!formData) {
     return (
@@ -30,7 +34,25 @@ export default function MediaPhotos({
     );
   }
 
-  const canEmbedVideo = formData.tier === 'premium' || formData.tier === 'elite';
+  const tierLimits = TIER_LIMITS[formData.tier as keyof typeof TIER_LIMITS] || TIER_LIMITS.essentials;
+  const canEmbedVideo = tierLimits.allowsVideo;
+  const maxImages = tierLimits.maxImages;
+
+  const handleUrlBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    if (!value) return;
+
+    const urlResult = validateUrl(value);
+    const errors = { ...validationErrors };
+
+    if (!urlResult.isValid) {
+      errors[name] = urlResult.errors[0];
+    } else {
+      delete errors[name];
+    }
+
+    setValidationErrors(errors);
+  };
 
   const handleAutoplayToggle = () => {
     setFormData(prev => ({
@@ -38,6 +60,9 @@ export default function MediaPhotos({
       videoAutoplay: !prev.videoAutoplay
     }));
   };
+
+  // Check if we can add more photos
+  const canAddMorePhotos = maxImages === -1 || (formData.photos?.length || 0) < maxImages;
 
   return (
     <div className="space-y-6">
@@ -52,7 +77,10 @@ export default function MediaPhotos({
             name="logo"
             value={formData.logo || ''}
             onChange={handleChange}
-            className="flex-1 p-2 border border-surface-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            onBlur={handleUrlBlur}
+            className={`flex-1 p-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+              validationErrors.logo ? 'border-red-300' : 'border-surface-300'
+            }`}
             required
           />
           <ImageUpload
@@ -62,6 +90,9 @@ export default function MediaPhotos({
             onError={(error) => setError(error)}
           />
         </div>
+        {validationErrors.logo && (
+          <p className="mt-1 text-sm text-red-600">{validationErrors.logo}</p>
+        )}
         <p className="mt-1 text-sm text-surface-500">
           Please provide a URL to your business logo (recommended size: 200x200px, max file size: 1MB)
         </p>
@@ -78,7 +109,10 @@ export default function MediaPhotos({
             name="coverImage"
             value={formData.coverImage || ''}
             onChange={handleChange}
-            className="flex-1 p-2 border border-surface-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            onBlur={handleUrlBlur}
+            className={`flex-1 p-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+              validationErrors.coverImage ? 'border-red-300' : 'border-surface-300'
+            }`}
             required
           />
           <ImageUpload
@@ -88,6 +122,9 @@ export default function MediaPhotos({
             onError={(error) => setError(error)}
           />
         </div>
+        {validationErrors.coverImage && (
+          <p className="mt-1 text-sm text-red-600">{validationErrors.coverImage}</p>
+        )}
         <p className="mt-1 text-sm text-surface-500">
           Please provide a URL to your business cover image (recommended size: 1920x400px, max file size: 1MB)
         </p>
@@ -107,12 +144,18 @@ export default function MediaPhotos({
                   name="videoUrl"
                   value={formData.videoUrl || ''}
                   onChange={handleChange}
+                  onBlur={handleUrlBlur}
                   placeholder="Enter YouTube or Vimeo URL"
-                  className="w-full p-2 pl-10 border border-surface-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  className={`w-full p-2 pl-10 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                    validationErrors.videoUrl ? 'border-red-300' : 'border-surface-300'
+                  }`}
                 />
                 <Video className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-surface-400" />
               </div>
             </div>
+            {validationErrors.videoUrl && (
+              <p className="text-sm text-red-600">{validationErrors.videoUrl}</p>
+            )}
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -136,7 +179,7 @@ export default function MediaPhotos({
 
       <div>
         <label className="block text-sm font-medium text-surface-700 mb-2">
-          Additional Photos
+          Additional Photos {maxImages !== -1 && `(${formData.photos?.filter((p: string) => p).length || 0}/${maxImages})`}
         </label>
         {(formData.photos || []).map((photo: string, index: number) => (
           <div key={index} className="flex gap-2 mb-2">
@@ -164,13 +207,20 @@ export default function MediaPhotos({
             )}
           </div>
         ))}
-        <button
-          type="button"
-          onClick={() => addArrayItem('photos')}
-          className="text-primary-600 hover:text-primary-700 text-sm font-medium"
-        >
-          + Add Photo
-        </button>
+        {canAddMorePhotos && (
+          <button
+            type="button"
+            onClick={() => addArrayItem('photos')}
+            className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+          >
+            + Add Photo
+          </button>
+        )}
+        {!canAddMorePhotos && maxImages !== -1 && (
+          <p className="text-sm text-amber-600">
+            You've reached the maximum number of photos for your tier ({maxImages}).
+          </p>
+        )}
         <p className="mt-1 text-sm text-surface-500">
           Recommended size: 800x600px or larger with 4:3 aspect ratio for best display. Maximum file size: 1MB per image
         </p>

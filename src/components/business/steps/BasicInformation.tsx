@@ -4,6 +4,8 @@ import { categories } from '../../../data/categories';
 import { useAuth } from '../../../hooks/useAuth';
 import { useLocation } from 'react-router-dom';
 import { censorText } from '../../../utils/censor';
+import { validateBusinessName, validateDescription } from '../../../utils/validation';
+import { TIER_LIMITS } from '../../../utils/constants';
 
 interface BasicInformationProps {
   formData: any;
@@ -16,34 +18,31 @@ const TIERS = [
     id: 'essentials',
     name: 'Essentials',
     price: 0,
-    maxCategories: 1,
-    allowSubCategories: false
+    ...TIER_LIMITS.essentials
   },
   {
     id: 'enhanced',
     name: 'Enhanced',
     price: 9.97,
-    maxCategories: 2,
-    allowSubCategories: false
+    ...TIER_LIMITS.enhanced
   },
   {
     id: 'premium',
     name: 'Premium',
     price: 24.97,
-    maxCategories: 5,
-    allowSubCategories: true
+    ...TIER_LIMITS.premium
   },
   {
     id: 'elite',
     name: 'Elite',
     price: 49.97,
-    maxCategories: -1, // Unlimited
-    allowSubCategories: true
+    ...TIER_LIMITS.elite
   }
 ];
 
 export default function BasicInformation({ formData, handleChange, handleSubCategoryChange }: BasicInformationProps) {
   const [newSubCategory, setNewSubCategory] = useState<{ [key: string]: string }>({});
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const { user } = useAuth();
   const location = useLocation();
   
@@ -62,7 +61,7 @@ export default function BasicInformation({ formData, handleChange, handleSubCate
 
   const selectedTier = TIERS.find(tier => tier.id === formData.tier);
   const maxCategories = selectedTier?.maxCategories || 1;
-  const allowSubCategories = selectedTier?.allowSubCategories || false;
+  const allowSubCategories = selectedTier?.allowsSubCategories || false;
 
   // Create a synthetic event with censored value
   const createCensoredEvent = (name: string, value: string) => ({
@@ -75,6 +74,43 @@ export default function BasicInformation({ formData, handleChange, handleSubCate
   const handleCensoredChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     handleChange(createCensoredEvent(name, value));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    const errors = { ...validationErrors };
+
+    switch (name) {
+      case 'businessName':
+        const nameResult = validateBusinessName(value);
+        if (!nameResult.isValid) {
+          errors[name] = nameResult.errors[0];
+        } else {
+          delete errors[name];
+        }
+        break;
+      case 'description':
+        const descResult = validateDescription(value, formData.tier);
+        if (!descResult.isValid) {
+          errors[name] = descResult.errors[0];
+        } else {
+          delete errors[name];
+        }
+        break;
+      default:
+        break;
+    }
+
+    setValidationErrors(errors);
   };
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -189,9 +225,15 @@ export default function BasicInformation({ formData, handleChange, handleSubCate
           name="businessName"
           value={formData.businessName || ''}
           onChange={handleCensoredChange}
-          className="w-full p-2 border border-surface-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          onBlur={handleBlur}
+          className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+            validationErrors.businessName ? 'border-red-300' : 'border-surface-300'
+          }`}
           required
         />
+        {validationErrors.businessName && (
+          <p className="mt-1 text-sm text-red-600">{validationErrors.businessName}</p>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">

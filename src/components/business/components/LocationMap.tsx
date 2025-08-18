@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { GoogleMap, Marker, StandaloneSearchBox } from '@react-google-maps/api';
-import { MapPin, Search, Loader2, AlertTriangle } from 'lucide-react';
+import { Search, Loader2, AlertTriangle } from 'lucide-react';
 
 interface LocationMapProps {
   onLocationSelect: (location: { lat: number; lng: number; address?: string }) => void;
@@ -137,6 +137,16 @@ export default function LocationMap({ onLocationSelect, initialLocation }: Locat
     onLocationSelect(newPosition);
   }, [onLocationSelect]);
 
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="flex items-center gap-2 text-red-700">
+          <AlertTriangle className="h-5 w-5" />
+          <p>{error}</p>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="space-y-4">
       <StandaloneSearchBox

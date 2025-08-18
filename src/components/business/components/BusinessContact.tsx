@@ -1,15 +1,13 @@
 import React from 'react';
 import { Phone, Mail, Globe2, MapPin, Navigation } from 'lucide-react';
 import { Business } from '../types';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, Marker } from '@react-google-maps/api';
 
 interface BusinessContactProps {
   business: Business;
   setShowContactModal: (show: boolean) => void;
   getCountryName: (code: string) => string;
 }
-
-const MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 const mapContainerStyle = {
   width: '100%',
@@ -22,10 +20,6 @@ export default function BusinessContact({
   getCountryName 
 }: BusinessContactProps) {
   const canShowContactForm = business.tier !== 'essentials';
-
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: MAPS_API_KEY || ''
-  });
 
   const center = business.latitude && business.longitude ? {
     lat: business.latitude,
@@ -99,7 +93,7 @@ export default function BusinessContact({
       </div>
 
       {/* Map Section */}
-      {isLoaded && center && (
+      {center && (
         <div className="mt-4 space-y-4">
           <div className="rounded-lg overflow-hidden border border-surface-200">
             <GoogleMap
@@ -122,12 +116,6 @@ export default function BusinessContact({
             <Navigation className="h-5 w-5" />
             Get Directions
           </button>
-        </div>
-      )}
-
-      {loadError && (
-        <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-lg">
-          Unable to load map. Please try again later.
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import ErrorBoundary from './components/ErrorBoundary';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Content from './components/Content';
@@ -35,10 +36,11 @@ import GoogleMapsProvider from './components/GoogleMapsProvider';
 
 function App() {
   return (
-    <Router>
-      <GoogleMapsProvider>
-        <SkipLink />
-        <Routes>
+    <ErrorBoundary>
+      <Router>
+        <GoogleMapsProvider>
+          <SkipLink />
+          <Routes>
           {/* Handle Firebase auth action URLs */}
           <Route path="/auth/action" element={<EmailVerificationHandler />} />
           
@@ -402,11 +404,12 @@ function App() {
           
           {/* Catch all other routes and redirect to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        <CookieConsent />
-        <OfflineNotice />
-      </GoogleMapsProvider>
-    </Router>
+          </Routes>
+          <CookieConsent />
+          <OfflineNotice />
+        </GoogleMapsProvider>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

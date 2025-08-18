@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Star, ExternalLink } from 'lucide-react';
 import { getCategoryColor } from '../../../data/categories';
 import { generateSlug } from '../../../utils/slug';
+import LazyImage from '../../ui/LazyImage';
 
 export interface BusinessTileData {
   id: string;
@@ -124,14 +125,10 @@ export default function BusinessTile({ business, getCoverImage }: BusinessTilePr
       className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300"
     >
       <div className="h-48 overflow-hidden">
-        <img 
+        <LazyImage
           src={getCoverImage(business)} 
           alt={business.businessName}
           className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-300"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=1920';
-          }}
         />
       </div>
       <div className="p-6">

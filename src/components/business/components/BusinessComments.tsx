@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, doc, getDoc, updateDoc, increment, setDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, doc, getDoc, updateDoc, increment, setDoc, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../../../lib/firebase';
-import { MessageSquare, Send, Loader2, Flag } from 'lucide-react';
+import { MessageSquare, Send, Loader2, Flag, Trash2 } from 'lucide-react';
 import AuthModal from '../../auth/AuthModal';
 import md5 from 'md5';
 import { censorText } from '../../../utils/censor';
+import { ADMIN_EMAILS } from '../../../utils/constants';
 
 interface Comment {
   id: string;
@@ -28,6 +29,7 @@ export default function BusinessComments({ businessId }: BusinessCommentsProps) 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [userCommentCount, setUserCommentCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
 
   useEffect(() => {
     // Subscribe to comments
@@ -127,6 +129,51 @@ export default function BusinessComments({ businessId }: BusinessCommentsProps) 
     alert('Thank you for reporting this comment. Our team will review it shortly.');
   };
 
+  const handleDeleteComment = async (comment: Comment) => {
+    if (!auth.currentUser) {
+      setShowAuthModal(true);
+      return;
+    }
+
+    // Check if user can delete this comment (owner or admin)
+    const canDelete = comment.userId === auth.currentUser.uid || 
+                     ADMIN_EMAILS.includes(auth.currentUser.email || '');
+
+    if (!canDelete) {
+      setError('You can only delete your own comments');
+      return;
+    }
+
+    if (!window.confirm('Are you sure you want to delete this comment?')) {
+      return;
+    }
+
+    setDeletingCommentId(comment.id);
+    setError(null);
+
+    try {
+      const commentRef = doc(db, `businesses/${businessId}/comments`, comment.id);
+      await deleteDoc(commentRef);
+
+      // Update user's comment count if it's their comment
+      if (comment.userId === auth.currentUser.uid) {
+        const statsRef = doc(db, 'users', auth.currentUser.uid);
+        try {
+          await updateDoc(statsRef, {
+            totalComments: increment(-1)
+          });
+          setUserCommentCount(prev => Math.max(0, prev - 1));
+        } catch (updateError) {
+          console.error('Error updating comment count:', updateError);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      setError('Failed to delete comment. Please try again.');
+    } finally {
+      setDeletingCommentId(null);
+    }
+  };
   const getThreadedComments = () => {
     const commentMap = new Map<string, Comment[]>();
     
@@ -170,6 +217,16 @@ export default function BusinessComments({ businessId }: BusinessCommentsProps) 
                   className="text-sm text-primary-600 hover:text-primary-700"
                 >
                   Reply
+                </button>
+              )}
+              {auth.currentUser && (comment.userId === auth.currentUser.uid || ADMIN_EMAILS.includes(auth.currentUser.email || '')) && (
+                <button
+                  onClick={() => handleDeleteComment(comment)}
+                  disabled={deletingCommentId === comment.id}
+                  className="text-sm text-red-600 hover:text-red-700 flex items-center gap-1 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  {deletingCommentId === comment.id ? 'Deleting...' : 'Delete'}
                 </button>
               )}
               <button

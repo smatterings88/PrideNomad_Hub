@@ -7,7 +7,7 @@ import Breadcrumb from '../ui/Breadcrumb';
 import { BusinessOnboardingProps } from './types';
 import { defaultFormData, STEPS } from './constants';
 import BasicInformation from './steps/BasicInformation';
-import BusinessDetails from './steps/BusinessDetails';
+import BusinessDetailsStep from './steps/BusinessDetails';
 import ContactInformation from './steps/ContactInformation';
 import MediaPhotos from './steps/MediaPhotos';
 import BusinessHours from './steps/BusinessHours';
@@ -174,6 +174,9 @@ export default function BusinessOnboarding({ initialData, mode = 'create' }: Bus
         userId: auth.currentUser.uid,
         ownerEmail: auth.currentUser.email,
         updatedAt: serverTimestamp(),
+        // Initialize rating fields if not present
+        rating: formData.rating || 0,
+        ratingCount: formData.ratingCount || 0
       };
 
       // Check if we're claiming an existing business
@@ -204,6 +207,9 @@ export default function BusinessOnboarding({ initialData, mode = 'create' }: Bus
                 createdAt: businessData.createdAt || serverTimestamp(),
                 status: 'approved', // Set status to approved
                 verified: true // Automatically verify the business
+                // Preserve existing rating data
+                rating: businessData.rating || 0,
+                ratingCount: businessData.ratingCount || 0
               });
               
               if (SHOW_DEBUG) setDebugInfo(prev => `${prev || ''}\nSuccessfully updated and verified original business`);
@@ -277,7 +283,7 @@ export default function BusinessOnboarding({ initialData, mode = 'create' }: Bus
         );
       case 1:
         return (
-          <BusinessDetails
+          <BusinessDetailsStep
             formData={formData}
             handleChange={handleChange}
             handleArrayChange={handleArrayChange}

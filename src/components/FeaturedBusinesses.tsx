@@ -54,9 +54,8 @@ export default function FeaturedBusinesses() {
 
         // Sort by creation date
         const sortedBusinesses = businessesData.sort((a, b) => {
-          const aTime = a.createdAt?.toMillis?.() || 0;
-          const bTime = b.createdAt?.toMillis?.() || 0;
-          return bTime - aTime;
+          // Since we're already ordering by createdAt in the query, maintain that order
+          return 0;
         });
 
         // Take only the first 6 businesses

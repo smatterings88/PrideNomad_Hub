@@ -1,7 +1,7 @@
 import React from 'react';
 import { censorText } from '../../../utils/censor';
 
-interface BusinessDetailsProps {
+interface BusinessDetailsStepProps {
   formData: any;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   handleArrayChange: (index: number, value: string, field: 'services' | 'amenities' | 'photos') => void;
@@ -9,13 +9,13 @@ interface BusinessDetailsProps {
   removeArrayItem: (index: number, field: 'services' | 'amenities' | 'photos') => void;
 }
 
-export default function BusinessDetails({ 
+export default function BusinessDetailsStep({ 
   formData, 
   handleChange, 
   handleArrayChange, 
   addArrayItem, 
   removeArrayItem 
-}: BusinessDetailsProps) {
+}: BusinessDetailsStepProps) {
   // Safety check to prevent errors when formData is undefined
   if (!formData) {
     return (

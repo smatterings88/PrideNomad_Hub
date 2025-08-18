@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import countryCodeList from 'country-codes-list';
-import { MapPin } from 'lucide-react';
+import { MapPin, AlertTriangle } from 'lucide-react';
 import LocationMap from '../components/LocationMap';
 import MapErrorBoundary from '../components/MapErrorBoundary';
+import { validateEmail, validatePhone, validateUrl } from '../../../utils/validation';
 
 interface ContactInformationProps {
   formData: any;
@@ -27,6 +28,7 @@ const countryList = Array.from(
 export default function ContactInformation({ formData, handleChange }: ContactInformationProps) {
   const [locationLoading, setLocationLoading] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(
     formData.latitude && formData.longitude 
       ? { lat: formData.latitude, lng: formData.longitude }
@@ -37,6 +39,47 @@ export default function ContactInformation({ formData, handleChange }: ContactIn
   const createEvent = (name: string, value: string) => ({
     target: { name, value }
   }) as React.ChangeEvent<HTMLInputElement>;
+
+  // Validate field on blur
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const errors = { ...validationErrors };
+
+    switch (name) {
+      case 'email':
+        const emailResult = validateEmail(value);
+        if (!emailResult.isValid) {
+          errors[name] = emailResult.errors[0];
+        } else {
+          delete errors[name];
+        }
+        break;
+      case 'phone':
+        const phoneResult = validatePhone(value);
+        if (!phoneResult.isValid) {
+          errors[name] = phoneResult.errors[0];
+        } else {
+          delete errors[name];
+        }
+        break;
+      case 'website':
+        if (value) {
+          const urlResult = validateUrl(value);
+          if (!urlResult.isValid) {
+            errors[name] = urlResult.errors[0];
+          } else {
+            delete errors[name];
+          }
+        } else {
+          delete errors[name];
+        }
+        break;
+      default:
+        break;
+    }
+
+    setValidationErrors(errors);
+  };
 
   // Helper function to handle address parsing
   const handleAddressUpdate = (addressParts: string[]) => {
@@ -156,9 +199,18 @@ export default function ContactInformation({ formData, handleChange }: ContactIn
             name="phone"
             value={formData.phone || ''}
             onChange={handleChange}
-            className="w-full p-2 border border-surface-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            onBlur={handleBlur}
+            className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+              validationErrors.phone ? 'border-red-300' : 'border-surface-300'
+            }`}
             required
           />
+          {validationErrors.phone && (
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+              <AlertTriangle className="h-4 w-4" />
+              {validationErrors.phone}
+            </p>
+          )}
         </div>
 
         <div>
@@ -171,9 +223,18 @@ export default function ContactInformation({ formData, handleChange }: ContactIn
             name="email"
             value={formData.email || ''}
             onChange={handleChange}
-            className="w-full p-2 border border-surface-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            onBlur={handleBlur}
+            className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+              validationErrors.email ? 'border-red-300' : 'border-surface-300'
+            }`}
             required
           />
+          {validationErrors.email && (
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+              <AlertTriangle className="h-4 w-4" />
+              {validationErrors.email}
+            </p>
+          )}
         </div>
       </div>
 
@@ -187,8 +248,17 @@ export default function ContactInformation({ formData, handleChange }: ContactIn
           name="website"
           value={formData.website || ''}
           onChange={handleChange}
-          className="w-full p-2 border border-surface-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          onBlur={handleBlur}
+          className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+            validationErrors.website ? 'border-red-300' : 'border-surface-300'
+          }`}
         />
+        {validationErrors.website && (
+          <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+            <AlertTriangle className="h-4 w-4" />
+            {validationErrors.website}
+          </p>
+        )}
       </div>
 
       <div>

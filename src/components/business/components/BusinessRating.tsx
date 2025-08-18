@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, query, orderBy, getDocs, doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
 import { db, auth } from '../../../lib/firebase';
 import { Star } from 'lucide-react';
 import AuthModal from '../../auth/AuthModal';
@@ -88,16 +88,35 @@ export default function BusinessRating({
         timestamp: new Date()
       });
 
+      // Update the business document with new rating statistics
+      const businessRef = doc(db, 'businesses', businessId);
+      const isNewRating = !oldRating;
+      
+      if (isNewRating) {
+        // New rating - increment count and update average
+        const newCount = ratingCount + 1;
+        const newAverage = ((averageRating * ratingCount) + newRating) / newCount;
+        
+        await updateDoc(businessRef, {
+          rating: Math.round(newAverage * 10) / 10,
+          ratingCount: increment(1)
+        });
+        
+        setRatingCount(newCount);
+        setAverageRating(Math.round(newAverage * 10) / 10);
+      } else {
+        // Updated existing rating - recalculate average
+        const newTotal = (averageRating * ratingCount) - oldRating + newRating;
+        const newAverage = newTotal / ratingCount;
+        
+        await updateDoc(businessRef, {
+          rating: Math.round(newAverage * 10) / 10
+        });
+        
+        setAverageRating(Math.round(newAverage * 10) / 10);
+      }
       // Update local state
       setUserRating(newRating);
-      setRatingCount(prev => oldRating ? prev : prev + 1);
-      
-      // Recalculate average
-      const total = (averageRating * ratingCount) - (oldRating || 0) + newRating;
-      const newCount = oldRating ? ratingCount : ratingCount + 1;
-      const newAverage = Math.round((total / newCount) * 10) / 10;
-      
-      setAverageRating(newAverage);
       setShowRatingModal(false);
     } catch (error) {
       console.error('Error saving rating:', error);

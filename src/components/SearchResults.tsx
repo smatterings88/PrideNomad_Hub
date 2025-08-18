@@ -5,6 +5,7 @@ import { db } from '../lib/firebase';
 import { categories } from '../data/categories';
 import BusinessTile, { BusinessTileData } from './business/components/BusinessTile';
 import Breadcrumb from './ui/Breadcrumb';
+import { useDebounce } from '../hooks/useDebounce';
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
@@ -15,6 +16,10 @@ export default function SearchResults() {
 
   const searchTerm = searchParams.get('q') || '';
   const location = searchParams.get('location') || '';
+  
+  // Debounce search parameters to reduce unnecessary API calls
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const debouncedLocation = useDebounce(location, 300);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -52,12 +57,12 @@ export default function SearchResults() {
         
         let results = Array.from(businessMap.values());
 
-        if (searchTerm || location) {
+        if (debouncedSearchTerm || debouncedLocation) {
           results = results.filter(business => {
-            let matchesSearch = !searchTerm;
+            let matchesSearch = !debouncedSearchTerm;
             
-            if (searchTerm) {
-              const term = searchTerm.toLowerCase();
+            if (debouncedSearchTerm) {
+              const term = debouncedSearchTerm.toLowerCase();
               const searchFields = [
                 business.businessName.toLowerCase(),
                 ...business.categories.map(c => c.toLowerCase()),
@@ -67,15 +72,15 @@ export default function SearchResults() {
               matchesSearch = searchFields.some(field => field.includes(term));
             }
 
-            const matchesLocation = !location ||
-              `${business.city}, ${business.state}`.toLowerCase().includes(location.toLowerCase());
+            const matchesLocation = !debouncedLocation ||
+              `${business.city}, ${business.state}`.toLowerCase().includes(debouncedLocation.toLowerCase());
 
             return matchesSearch && matchesLocation;
           });
 
-          if (results.length === 0 && location && searchTerm) {
+          if (results.length === 0 && debouncedLocation && debouncedSearchTerm) {
             results = Array.from(businessMap.values()).filter(business => {
-              const term = searchTerm.toLowerCase();
+              const term = debouncedSearchTerm.toLowerCase();
               const searchFields = [
                 business.businessName.toLowerCase(),
                 ...business.categories.map(c => c.toLowerCase()),
@@ -102,7 +107,7 @@ export default function SearchResults() {
     };
 
     fetchResults();
-  }, [searchTerm, location]);
+  }, [debouncedSearchTerm, debouncedLocation]);
 
   const getCategoryImage = (categoryName: string): string => {
     const category = categories.find(c => c.name === categoryName);

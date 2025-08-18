@@ -206,7 +206,7 @@ export default function BusinessOnboarding({ initialData, mode = 'create' }: Bus
                 updatedAt: serverTimestamp(),
                 createdAt: businessData.createdAt || serverTimestamp(),
                 status: 'approved', // Set status to approved
-                verified: true // Automatically verify the business
+                verified: true, // Automatically verify the business
                 // Preserve existing rating data
                 rating: businessData.rating || 0,
                 ratingCount: businessData.ratingCount || 0

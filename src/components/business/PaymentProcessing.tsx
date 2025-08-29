@@ -90,7 +90,7 @@ export default function PaymentProcessing() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState<'enhanced' | 'premium' | 'elite' | null>(null);
+  const [showModal, setShowModal] = useState<'enhanced' | 'premium' | 'elite' | 'enhanced-annual' | null>(null);
 
   useEffect(() => {
     // Handle payment response
@@ -144,6 +144,12 @@ export default function PaymentProcessing() {
     // Check if Monthly Enhanced plan is selected
     if (selectedPlan === 'enhanced' && !isYearly) {
       setShowModal('enhanced');
+      return;
+    }
+
+    // Check if Annual Enhanced plan is selected
+    if (selectedPlan === 'enhanced' && isYearly) {
+      setShowModal('enhanced-annual');
       return;
     }
 
@@ -426,6 +432,48 @@ export default function PaymentProcessing() {
                   data-form-id="76w8gDbB9tIqqquy8eX1"
                   title="PNH Enhanced Monthly"
                 >
+                </iframe>
+                <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced Annual Modal */}
+      {showModal === 'enhanced-annual' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-surface-200">
+              <h3 className="text-xl font-semibold text-surface-900">
+                Complete Your Enhanced Annual Subscription
+              </h3>
+              <button
+                onClick={() => setShowModal(null)}
+                className="text-surface-400 hover:text-surface-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="w-full h-[600px]">
+                                 <iframe
+                   src="https://api.leadconnectorhq.com/widget/form/tchR4XYrDJys2IWf2jfp"
+                   style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
+                   id="inline-tchR4XYrDJys2IWf2jfp" 
+                   data-layout="{'id':'INLINE'}"
+                   data-trigger-type="alwaysShow"
+                   data-trigger-value=""
+                   data-activation-type="alwaysActivated"
+                   data-activation-value=""
+                   data-deactivation-type="neverDeactivate"
+                   data-deactivation-value=""
+                   data-form-name="PNH Enhanced Annual"
+                   data-height="859"
+                   data-layout-iframe-id="inline-tchR4XYrDJys2IWf2jfp"
+                   data-form-id="tchR4XYrDJys2IWf2jfp"
+                   title="PNH Enhanced Annual"
+                 >
                 </iframe>
                 <script src="https://link.msgsndr.com/js/form_embed.js"></script>
               </div>

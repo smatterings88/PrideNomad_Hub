@@ -31,12 +31,7 @@ VITE_GHL_WHITE_LABEL_DOMAIN=your_white_label_domain
 VITE_UPLOADCARE_PUBLIC_KEY=your_uploadcare_public_key
 ```
 
-### NMI Payment Configuration
-```
-VITE_NMI_API_KEY=your_nmi_api_key
-VITE_NMI_REDIRECT_URL=your_redirect_url
-VITE_NMI_SECURITY_KEY=your_security_key
-```
+
 
 ### Google Maps Configuration
 ```

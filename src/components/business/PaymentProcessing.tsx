@@ -428,7 +428,7 @@ export default function PaymentProcessing() {
             <div className="p-6">
               <div className="w-full h-[600px]">
                 <iframe
-                  src="https://api.leadconnectorhq.com/widget/form/76w8gDbB9tIqqquy8eX1"
+                  src={`https://api.leadconnectorhq.com/widget/form/76w8gDbB9tIqqquy8eX1?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
                   style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
                   id="inline-76w8gDbB9tIqqquy8eX1" 
                   data-layout="{'id':'INLINE'}"
@@ -469,23 +469,23 @@ export default function PaymentProcessing() {
             </div>
             <div className="p-6">
               <div className="w-full h-[600px]">
-                                 <iframe
-                   src="https://api.leadconnectorhq.com/widget/form/tchR4XYrDJys2IWf2jfp"
-                   style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
-                   id="inline-tchR4XYrDJys2IWf2jfp" 
-                   data-layout="{'id':'INLINE'}"
-                   data-trigger-type="alwaysShow"
-                   data-trigger-value=""
-                   data-activation-type="alwaysActivated"
-                   data-activation-value=""
-                   data-deactivation-type="neverDeactivate"
-                   data-deactivation-value=""
-                   data-form-name="PNH Enhanced Annual"
-                   data-height="859"
-                   data-layout-iframe-id="inline-tchR4XYrDJys2IWf2jfp"
-                   data-form-id="tchR4XYrDJys2IWf2jfp"
-                   title="PNH Enhanced Annual"
-                 >
+                <iframe
+                  src={`https://api.leadconnectorhq.com/widget/form/tchR4XYrDJys2IWf2jfp?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
+                  style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
+                  id="inline-tchR4XYrDJys2IWf2jfp" 
+                  data-layout="{'id':'INLINE'}"
+                  data-trigger-type="alwaysShow"
+                  data-trigger-value=""
+                  data-activation-type="alwaysActivated"
+                  data-activation-value=""
+                  data-deactivation-type="neverDeactivate"
+                  data-deactivation-value=""
+                  data-form-name="PNH Enhanced Annual"
+                  data-height="859"
+                  data-layout-iframe-id="inline-tchR4XYrDJys2IWf2jfp"
+                  data-form-id="tchR4XYrDJys2IWf2jfp"
+                  title="PNH Enhanced Annual"
+                >
                 </iframe>
                 <script src="https://link.msgsndr.com/js/form_embed.js"></script>
               </div>
@@ -512,7 +512,7 @@ export default function PaymentProcessing() {
             <div className="p-6">
               <div className="w-full h-[600px]">
                 <iframe
-                  src="https://api.leadconnectorhq.com/widget/form/GcGS1K6TlSefkrzBlLgf"
+                  src={`https://api.leadconnectorhq.com/widget/form/GcGS1K6TlSefkrzBlLgf?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
                   style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
                   id="inline-GcGS1K6TlSefkrzBlLgf" 
                   data-layout="{'id':'INLINE'}"
@@ -553,23 +553,23 @@ export default function PaymentProcessing() {
             </div>
             <div className="p-6">
               <div className="w-full h-[600px]">
-                                 <iframe
-                   src="https://api.leadconnectorhq.com/widget/form/GBDAzcqfKIKfgsV9jz6c"
-                   style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
-                   id="inline-GBDAzcqfKIKfgsV9jz6c" 
-                   data-layout="{'id':'INLINE'}"
-                   data-trigger-type="alwaysShow"
-                   data-trigger-value=""
-                   data-activation-type="alwaysActivated"
-                   data-activation-value=""
-                   data-deactivation-type="neverDeactivate"
-                   data-deactivation-value=""
-                   data-form-name="PNH Premium Annual"
-                   data-height="861"
-                   data-layout-iframe-id="inline-GBDAzcqfKIKfgsV9jz6c"
-                   data-form-id="GBDAzcqfKIKfgsV9jz6c"
-                   title="PNH Premium Annual"
-                 >
+                <iframe
+                  src={`https://api.leadconnectorhq.com/widget/form/GBDAzcqfKIKfgsV9jz6c?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
+                  style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
+                  id="inline-GBDAzcqfKIKfgsV9jz6c" 
+                  data-layout="{'id':'INLINE'}"
+                  data-trigger-type="alwaysShow"
+                  data-trigger-value=""
+                  data-activation-type="alwaysActivated"
+                  data-activation-value=""
+                  data-deactivation-type="neverDeactivate"
+                  data-deactivation-value=""
+                  data-form-name="PNH Premium Annual"
+                  data-height="861"
+                  data-layout-iframe-id="inline-GBDAzcqfKIKfgsV9jz6c"
+                  data-form-id="GBDAzcqfKIKfgsV9jz6c"
+                  title="PNH Premium Annual"
+                >
                 </iframe>
                 <script src="https://link.msgsndr.com/js/form_embed.js"></script>
               </div>
@@ -596,7 +596,7 @@ export default function PaymentProcessing() {
             <div className="p-6">
               <div className="w-full h-[600px]">
                 <iframe
-                  src="https://api.leadconnectorhq.com/widget/form/XzGBbFvFm1sFPaj59fpq"
+                  src={`https://api.leadconnectorhq.com/widget/form/XzGBbFvFm1sFPaj59fpq?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
                   style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
                   id="inline-XzGBbFvFm1sFPaj59fpq" 
                   data-layout="{'id':'INLINE'}"
@@ -637,23 +637,23 @@ export default function PaymentProcessing() {
             </div>
             <div className="p-6">
               <div className="w-full h-[600px]">
-                                 <iframe
-                   src="https://api.leadconnectorhq.com/widget/form/DTHRDPzdUyPqiPoget0n"
-                   style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
-                   id="inline-DTHRDPzdUyPqiPoget0n" 
-                   data-layout="{'id':'INLINE'}"
-                   data-trigger-type="alwaysShow"
-                   data-trigger-value=""
-                   data-activation-type="alwaysActivated"
-                   data-activation-value=""
-                   data-deactivation-type="neverDeactivate"
-                   data-deactivation-value=""
-                   data-form-name="PNH Elite Annual"
-                   data-height="861"
-                   data-layout-iframe-id="inline-DTHRDPzdUyPqiPoget0n"
-                   data-form-id="DTHRDPzdUyPqiPoget0n"
-                   title="PNH Elite Annual"
-                 >
+                <iframe
+                  src={`https://api.leadconnectorhq.com/widget/form/DTHRDPzdUyPqiPoget0n?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
+                  style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
+                  id="inline-DTHRDPzdUyPqiPoget0n" 
+                  data-layout="{'id':'INLINE'}"
+                  data-trigger-type="alwaysShow"
+                  data-trigger-value=""
+                  data-activation-type="alwaysActivated"
+                  data-activation-value=""
+                  data-deactivation-type="neverDeactivate"
+                  data-deactivation-value=""
+                  data-form-name="PNH Elite Annual"
+                  data-height="861"
+                  data-layout-iframe-id="inline-DTHRDPzdUyPqiPoget0n"
+                  data-form-id="DTHRDPzdUyPqiPoget0n"
+                  title="PNH Elite Annual"
+                >
                 </iframe>
                 <script src="https://link.msgsndr.com/js/form_embed.js"></script>
               </div>

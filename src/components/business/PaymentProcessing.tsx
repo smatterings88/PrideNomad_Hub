@@ -90,7 +90,7 @@ export default function PaymentProcessing() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState<'enhanced' | 'premium' | 'elite' | 'enhanced-annual' | 'premium-annual' | null>(null);
+  const [showModal, setShowModal] = useState<'enhanced' | 'premium' | 'elite' | 'enhanced-annual' | 'premium-annual' | 'elite-annual' | null>(null);
 
   useEffect(() => {
     // Handle payment response
@@ -168,6 +168,12 @@ export default function PaymentProcessing() {
     // Check if Monthly Elite plan is selected
     if (selectedPlan === 'elite' && !isYearly) {
       setShowModal('elite');
+      return;
+    }
+
+    // Check if Annual Elite plan is selected
+    if (selectedPlan === 'elite' && isYearly) {
+      setShowModal('elite-annual');
       return;
     }
 
@@ -606,6 +612,48 @@ export default function PaymentProcessing() {
                   data-form-id="XzGBbFvFm1sFPaj59fpq"
                   title="PNH Elite Monthly"
                 >
+                </iframe>
+                <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Elite Annual Modal */}
+      {showModal === 'elite-annual' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-surface-200">
+              <h3 className="text-xl font-semibold text-surface-900">
+                Complete Your Elite Annual Subscription
+              </h3>
+              <button
+                onClick={() => setShowModal(null)}
+                className="text-surface-400 hover:text-surface-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="w-full h-[600px]">
+                                 <iframe
+                   src="https://api.leadconnectorhq.com/widget/form/DTHRDPzdUyPqiPoget0n"
+                   style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
+                   id="inline-DTHRDPzdUyPqiPoget0n" 
+                   data-layout="{'id':'INLINE'}"
+                   data-trigger-type="alwaysShow"
+                   data-trigger-value=""
+                   data-activation-type="alwaysActivated"
+                   data-activation-value=""
+                   data-deactivation-type="neverDeactivate"
+                   data-deactivation-value=""
+                   data-form-name="PNH Elite Annual"
+                   data-height="861"
+                   data-layout-iframe-id="inline-DTHRDPzdUyPqiPoget0n"
+                   data-form-id="DTHRDPzdUyPqiPoget0n"
+                   title="PNH Elite Annual"
+                 >
                 </iframe>
                 <script src="https://link.msgsndr.com/js/form_embed.js"></script>
               </div>

@@ -24,11 +24,7 @@ VITE_GHL_PAYMENT_FORM_ID=your_payment_form_id
 VITE_GHL_WHITE_LABEL_DOMAIN=your_white_label_domain
 ```
 
-### Supabase Configuration
-```
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+
 
 ### Uploadcare Configuration
 ```

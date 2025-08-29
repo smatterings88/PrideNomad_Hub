@@ -14,7 +14,6 @@
   },
   "dependencies": {
     "@react-google-maps/api": "^2.19.3",
-    "@supabase/supabase-js": "^2.39.3",
     "@uploadcare/blocks": "0.32.4",
     "@uploadcare/upload-client": "6.12.1",
     "bad-words": "^3.0.4",

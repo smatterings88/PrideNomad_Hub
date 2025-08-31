@@ -26,6 +26,7 @@ import Terms from './components/pages/Terms';
 import FavoriteListings from './components/pages/FavoriteListings';
 import MyListings from './components/pages/MyListings';
 import MyEvents from './components/pages/MyEvents';
+import PendingClaims from './components/pages/PendingClaims';
 import EventForm from './components/events/EventForm';
 import EventDetails from './components/events/EventDetails';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -161,6 +162,22 @@ function App() {
                 </main>
                 <Footer />
               </>
+            }
+          />
+
+          {/* Pending Claims - Protected Route */}
+          <Route
+            path="/pending-claims"
+            element={
+              <ProtectedRoute>
+                <>
+                  <Header />
+                  <main id="main-content">
+                    <PendingClaims />
+                  </main>
+                  <Footer />
+                </>
+              </ProtectedRoute>
             }
           />
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Building2, Globe2, Heart, CreditCard, ArrowRight, Loader2, X } from 'lucide-react';
 import { auth, setUserRole } from '../../lib/firebase';
@@ -93,6 +93,16 @@ export default function PaymentProcessing() {
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [showModal, setShowModal] = useState<'enhanced' | 'premium' | 'elite' | 'enhanced-annual' | 'premium-annual' | 'elite-annual' | null>(null);
 
+  // Check if user is coming from pending claims
+  useEffect(() => {
+    const fromPendingClaim = location.state?.fromPendingClaim;
+    if (fromPendingClaim) {
+      setSelectedPlan(location.state.selectedPlan || 'premium');
+      setIsYearly(location.state.isYearly || false);
+      setDebugInfo('Resuming payment from pending claim');
+    }
+  }, [location.state]);
+
   const handlePaymentSuccess = async () => {
     if (!auth.currentUser) return;
 
@@ -133,19 +143,26 @@ export default function PaymentProcessing() {
     setDebugInfo(null);
 
     try {
-      // Store the selected plan and business data in a pending claims collection
-      const pendingClaimsRef = collection(db, 'pendingClaims');
-      const claimDoc = await addDoc(pendingClaimsRef, {
-        userId: auth.currentUser.uid,
-        userEmail: auth.currentUser.email,
-        selectedPlan: selectedPlan,
-        isYearly: isYearly,
-        planSelectionTimestamp: serverTimestamp(),
-        businessData: location.state?.businessData || null,
-        status: 'pending'
-      });
+      // Check if user is coming from pending claim
+      const fromPendingClaim = location.state?.fromPendingClaim;
+      
+      if (!fromPendingClaim) {
+        // Store the selected plan and business data in a pending claims collection
+        const pendingClaimsRef = collection(db, 'pendingClaims');
+        const claimDoc = await addDoc(pendingClaimsRef, {
+          userId: auth.currentUser.uid,
+          userEmail: auth.currentUser.email,
+          selectedPlan: selectedPlan,
+          isYearly: isYearly,
+          planSelectionTimestamp: serverTimestamp(),
+          businessData: location.state?.businessData || null,
+          status: 'pending'
+        });
 
-      setDebugInfo(`Plan selection stored for business claim: ${selectedPlan} (${isYearly ? 'yearly' : 'monthly'})`);
+        setDebugInfo(`Plan selection stored for business claim: ${selectedPlan} (${isYearly ? 'yearly' : 'monthly'})`);
+      } else {
+        setDebugInfo('Resuming payment from pending claim - no new claim created');
+      }
 
       // Check if Monthly Enhanced plan is selected
       if (selectedPlan === 'enhanced' && !isYearly) {

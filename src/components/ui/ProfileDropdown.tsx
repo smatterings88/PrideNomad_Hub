@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LogOut, ChevronDown, User, Heart, Calendar, Building2, CalendarCheck } from 'lucide-react';
+import { LogOut, ChevronDown, User, Heart, Calendar, Building2, CalendarCheck, Clock } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import md5 from 'md5';
 import { User as FirebaseUser } from 'firebase/auth';
@@ -15,6 +15,7 @@ interface ProfileDropdownProps {
 export default function ProfileDropdown({ user, userRole, onSignOut }: ProfileDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [ownsBusinesses, setOwnsBusinesses] = useState(false);
+  const [hasPendingClaims, setHasPendingClaims] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -34,10 +35,21 @@ export default function ProfileDropdown({ user, userRole, onSignOut }: ProfileDr
       if (!user) return;
 
       try {
+        // Check business ownership
         const businessesRef = collection(db, 'businesses');
         const q = query(businessesRef, where('userId', '==', user.uid));
         const querySnapshot = await getDocs(q);
         setOwnsBusinesses(!querySnapshot.empty);
+
+        // Check pending claims
+        const pendingClaimsRef = collection(db, 'pendingClaims');
+        const pendingQuery = query(
+          pendingClaimsRef, 
+          where('userId', '==', user.uid),
+          where('status', '==', 'pending')
+        );
+        const pendingSnapshot = await getDocs(pendingQuery);
+        setHasPendingClaims(!pendingSnapshot.empty);
       } catch (error) {
         console.error('Error checking business ownership:', error);
       }

@@ -1,5 +1,5 @@
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, serverTimestamp, addDoc, limit } from 'firebase/firestore';
+const { initializeApp } = require('firebase/app');
+const { getFirestore, collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, serverTimestamp, addDoc, limit } = require('firebase/firestore');
 
 // Firebase configuration - use environment variables
 const firebaseConfig = {
@@ -149,7 +149,7 @@ async function processGHLWebhook(params) {
   }
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Only allow GET requests (as configured in GHL automation)
   if (req.method !== 'GET') {
     return res.status(405).json({ 

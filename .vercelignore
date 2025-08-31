@@ -1,4 +1,4 @@
-# Exclude frontend source files from Vercel API compilation
+# Exclude ALL frontend source files from Vercel compilation
 src/
 public/
 index.html
@@ -10,3 +10,10 @@ eslint.config.js
 *.test.ts
 *.test.tsx
 __tests__/
+node_modules/
+dist/
+.git/
+.bolt/
+*.log
+*.md
+vercel-build.js

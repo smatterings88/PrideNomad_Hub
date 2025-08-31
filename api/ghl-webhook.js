@@ -1,29 +1,45 @@
 const { initializeApp } = require('firebase/app');
 const { getFirestore, collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, serverTimestamp, addDoc, limit } = require('firebase/firestore');
 
-// Firebase configuration - use environment variables (without VITE_ prefix for Vercel)
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY,
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.FIREBASE_PROJECT_ID,
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.FIREBASE_APP_ID
-};
+// Initialize Firebase safely
+let db = null;
+let firebaseInitialized = false;
 
-// Validate Firebase configuration
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  console.error('Missing Firebase configuration:', {
-    hasApiKey: !!firebaseConfig.apiKey,
-    hasProjectId: !!firebaseConfig.projectId,
-    envVars: Object.keys(process.env).filter(key => key.includes('FIREBASE'))
-  });
-  throw new Error('Firebase configuration is incomplete');
+function initializeFirebase() {
+  if (firebaseInitialized) return db;
+  
+  try {
+    // Firebase configuration - use environment variables (without VITE_ prefix for Vercel)
+    const firebaseConfig = {
+      apiKey: process.env.FIREBASE_API_KEY,
+      authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+      appId: process.env.FIREBASE_APP_ID
+    };
+
+    // Validate Firebase configuration
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+      console.error('Missing Firebase configuration:', {
+        hasApiKey: !!firebaseConfig.apiKey,
+        hasProjectId: !!firebaseConfig.projectId,
+        envVars: Object.keys(process.env).filter(key => key.includes('FIREBASE'))
+      });
+      throw new Error('Firebase configuration is incomplete');
+    }
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    firebaseInitialized = true;
+    console.log('Firebase initialized successfully');
+    return db;
+  } catch (error) {
+    console.error('Failed to initialize Firebase:', error);
+    throw error;
+  }
 }
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 // Role hierarchy for smart upgrades
 const roleHierarchy = {
@@ -36,6 +52,10 @@ const roleHierarchy = {
 // Find user by email
 async function findUserByEmail(email) {
   try {
+    if (!db) {
+      db = initializeFirebase();
+    }
+    
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('email', '==', email), limit(1));
     const querySnapshot = await getDocs(q);
@@ -58,6 +78,10 @@ async function findUserByEmail(email) {
 // Log payment to Firestore
 async function logPayment(paymentData) {
   try {
+    if (!db) {
+      db = initializeFirebase();
+    }
+    
     const paymentRef = collection(db, 'payments');
     await addDoc(paymentRef, {
       ...paymentData,
@@ -77,6 +101,11 @@ async function processGHLWebhook(params) {
     
     if (!params.user_email) {
       throw new Error('Missing user_email parameter');
+    }
+
+    // Initialize Firebase if needed
+    if (!db) {
+      db = initializeFirebase();
     }
 
     // Find the pending claim for this user
@@ -160,15 +189,15 @@ async function processGHLWebhook(params) {
 }
 
 module.exports = async function handler(req, res) {
-  // Only allow GET requests (as configured in GHL automation)
-  if (req.method !== 'GET') {
-    return res.status(405).json({ 
-      success: false, 
-      error: 'Method not allowed. Only GET requests are supported.' 
-    });
-  }
-
   try {
+    // Only allow GET requests (as configured in GHL automation)
+    if (req.method !== 'GET') {
+      return res.status(405).json({ 
+        success: false, 
+        error: 'Method not allowed. Only GET requests are supported.' 
+      });
+    }
+
     // Process the webhook with query parameters
     const result = await processGHLWebhook(req.query);
     

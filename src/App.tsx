@@ -27,6 +27,7 @@ import FavoriteListings from './components/pages/FavoriteListings';
 import MyListings from './components/pages/MyListings';
 import MyEvents from './components/pages/MyEvents';
 import PendingClaims from './components/pages/PendingClaims';
+import PaymentHistory from './components/pages/PaymentHistory';
 import EventForm from './components/events/EventForm';
 import EventDetails from './components/events/EventDetails';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -174,6 +175,22 @@ function App() {
                   <Header />
                   <main id="main-content">
                     <PendingClaims />
+                  </main>
+                  <Footer />
+                </>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Payment History - Protected Route */}
+          <Route
+            path="/payment-history"
+            element={
+              <ProtectedRoute>
+                <>
+                  <Header />
+                  <main id="main-content">
+                    <PaymentHistory />
                   </main>
                   <Footer />
                 </>

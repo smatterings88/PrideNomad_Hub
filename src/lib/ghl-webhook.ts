@@ -1,5 +1,5 @@
 import { auth, setUserRole } from './firebase';
-import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, limit, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, limit, deleteDoc, addDoc } from 'firebase/firestore';
 import { db } from './firebase';
 
 // Interface for the webhook query parameters
@@ -157,19 +157,18 @@ async function logPayment(paymentData: {
   isYearly: boolean;
   businessData?: any;
 }) {
-  // This is a placeholder - implement based on your backend
-  // You might save to Firestore, your database, etc.
   try {
     console.log('Payment logged:', paymentData);
     
-    // Example: Save to Firestore
-    // const paymentRef = collection(db, 'payments');
-    // await addDoc(paymentRef, {
-    //   ...paymentData,
-    //   timestamp: serverTimestamp(),
-    //   status: 'completed'
-    // });
+    // Save to Firestore payments collection
+    const paymentRef = collection(db, 'payments');
+    await addDoc(paymentRef, {
+      ...paymentData,
+      timestamp: serverTimestamp(),
+      status: 'completed'
+    });
     
+    console.log('Payment saved to Firestore successfully');
   } catch (error) {
     console.error('Error logging payment:', error);
   }

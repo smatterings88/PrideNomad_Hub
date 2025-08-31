@@ -119,6 +119,14 @@ export default function ProfileDropdown({ user, userRole, onSignOut }: ProfileDr
             <CalendarCheck className="h-4 w-4 mr-2" />
             My Events
           </Link>
+          <Link
+            to="/payment-history"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center px-4 py-2 text-surface-700 hover:bg-surface-100 transition-colors"
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Payment History
+          </Link>
           {hasPendingClaims && (
             <Link
               to="/pending-claims"

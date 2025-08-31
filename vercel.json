@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/ghl-webhook",
-      "destination": "/api/payment-webhooks/payment-success.ts"
+      "destination": "/api/payment-webhooks/payment-success.js"
     },
     {
       "source": "/(.*)",

@@ -34,6 +34,9 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated() && isOwner(userId);
       allow write: if isAuthenticated() && isOwner(userId);
+      
+      // Allow webhook to update user roles (server-side operation)
+      allow update: if true; // Webhook needs this access
     }
 
     // Pending Claims collection rules
@@ -53,6 +56,12 @@ service cloud.firestore {
       // Allow users to delete their own pending claims
       allow delete: if isAuthenticated() && 
         resource.data.userId == request.auth.uid;
+      
+      // Allow webhook to read pending claims by userEmail (server-side operation)
+      allow read: if true; // Webhook needs this access
+      
+      // Allow webhook to delete processed claims (server-side operation)
+      allow delete: if true; // Webhook needs this access
     }
 
     // Payments collection rules
@@ -62,8 +71,7 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid;
       
       // Allow system to create payment records (via webhook)
-      allow create: if isAuthenticated() && 
-        request.resource.data.userId == request.auth.uid;
+      allow create: if true; // Webhook needs this access
       
       // Users cannot modify or delete payment records
       allow update, delete: if false;

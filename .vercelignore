@@ -16,4 +16,3 @@ dist/
 .bolt/
 *.log
 *.md
-vercel-build.js

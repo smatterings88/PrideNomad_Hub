@@ -199,6 +199,26 @@ export default function BusinessOnboarding({ initialData, mode = 'create' }: Bus
             
             // Update the existing business and automatically set it as verified
             try {
+              // Get the user's current role to determine business tier
+              const userRef = doc(db, 'users', auth.currentUser.uid);
+              const userDoc = await getDoc(userRef);
+              let businessTier = 'essentials'; // Default tier
+              
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                const userRole = userData.role || 'Regular User';
+                
+                // Map user role to business tier
+                const roleToTier: Record<string, string> = {
+                  'Regular User': 'essentials',
+                  'Enhanced User': 'enhanced',
+                  'Premium User': 'premium',
+                  'Elite User': 'elite'
+                };
+                
+                businessTier = roleToTier[userRole] || 'essentials';
+              }
+              
               await updateDoc(originalRef, {
                 ...formData,
                 userId: auth.currentUser.uid,
@@ -207,6 +227,7 @@ export default function BusinessOnboarding({ initialData, mode = 'create' }: Bus
                 createdAt: businessData.createdAt || serverTimestamp(),
                 status: 'approved', // Set status to approved
                 verified: true, // Automatically verify the business
+                tier: businessTier, // Set tier based on user's subscription
                 // Preserve existing rating data
                 rating: businessData.rating || 0,
                 ratingCount: businessData.ratingCount || 0
@@ -237,9 +258,30 @@ export default function BusinessOnboarding({ initialData, mode = 'create' }: Bus
       }
 
       // Create new record if we didn't successfully update an existing one
+      // Get the user's current role to determine business tier
+      const userRef = doc(db, 'users', auth.currentUser.uid);
+      const userDoc = await getDoc(userRef);
+      let businessTier = 'essentials'; // Default tier
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const userRole = userData.role || 'Regular User';
+        
+        // Map user role to business tier
+        const roleToTier: Record<string, string> = {
+          'Regular User': 'essentials',
+          'Enhanced User': 'enhanced',
+          'Premium User': 'premium',
+          'Elite User': 'elite'
+        };
+        
+        businessTier = roleToTier[userRole] || 'essentials';
+      }
+      
       businessData.createdAt = serverTimestamp();
       businessData.status = 'pending';
       businessData.verified = false;
+      businessData.tier = businessTier; // Set tier based on user's subscription
       const newDocRef = await addDoc(collection(db, 'businesses'), businessData);
       if (SHOW_DEBUG) setDebugInfo(prev => `${prev || ''}\nCreated new business with ID: ${newDocRef.id}`);
 

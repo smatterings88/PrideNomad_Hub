@@ -6,6 +6,10 @@
   "devCommand": "npm run dev",
   "routes": [
     {
+      "src": "/api/ghl-webhook",
+      "dest": "/api/ghl-webhook.js"
+    },
+    {
       "src": "/assets/(.*)",
       "dest": "/assets/$1"
     },

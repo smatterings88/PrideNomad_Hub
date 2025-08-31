@@ -1,24 +1,11 @@
 import { auth, setUserRole } from './firebase';
+import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getDocs, limit, deleteDoc } from 'firebase/firestore';
+import { db } from './firebase';
 
 // Interface for the webhook query parameters
 interface GHLWebhookParams {
   user_email: string;
-  payment_type: string;
-  transaction_id?: string;
-  amount?: string;
-  status: string;
-  form_id?: string;
 }
-
-// Map payment types to plan IDs and billing cycles
-const PAYMENT_TYPE_MAP: Record<string, { planId: string; isYearly: boolean }> = {
-  'Enhanced Monthly': { planId: 'enhanced', isYearly: false },
-  'Enhanced Annual': { planId: 'enhanced', isYearly: true },
-  'Premium Monthly': { planId: 'premium', isYearly: false },
-  'Premium Annual': { planId: 'premium', isYearly: true },
-  'Elite Monthly': { planId: 'elite', isYearly: false },
-  'Elite Annual': { planId: 'elite', isYearly: true },
-};
 
 // Map plan IDs to user roles
 const PLAN_TO_ROLE: Record<string, string> = {
@@ -35,60 +22,94 @@ const PLAN_TO_ROLE: Record<string, string> = {
 export async function processGHLWebhook(params: GHLWebhookParams) {
   try {
     // Validate required parameters
-    if (!params.user_email || !params.payment_type || !params.status) {
-      throw new Error('Missing required parameters');
+    if (!params.user_email) {
+      throw new Error('Missing user email');
     }
 
-    // Check if payment was successful
-    if (params.status !== 'success') {
-      return {
-        success: false,
-        message: 'Payment not successful',
-        status: params.status
-      };
-    }
-
-    // Parse payment type to get plan and billing cycle
-    const paymentInfo = PAYMENT_TYPE_MAP[params.payment_type];
-    if (!paymentInfo) {
-      throw new Error(`Unknown payment type: ${params.payment_type}`);
-    }
-
-    const { planId, isYearly } = paymentInfo;
-    const userRole = PLAN_TO_ROLE[planId];
-
-    if (!userRole) {
-      throw new Error(`Unknown plan ID: ${planId}`);
-    }
-
-    // Find user by email (you'll need to implement this based on your backend)
+    // Find user by email
     const user = await findUserByEmail(params.user_email);
     if (!user) {
       throw new Error(`User not found with email: ${params.user_email}`);
     }
 
-    // Update user role
-    await setUserRole(user.uid, userRole);
+    // Find the pending claim for this user
+    const pendingClaimsRef = collection(db, 'pendingClaims');
+    const claimQuery = query(
+      pendingClaimsRef, 
+      where('userEmail', '==', params.user_email),
+      where('status', '==', 'pending'),
+      limit(1)
+    );
+    
+    const claimSnapshot = await getDocs(claimQuery);
+    
+    if (claimSnapshot.empty) {
+      throw new Error('No pending claim found for user');
+    }
 
-    // Log successful payment (you can implement this as needed)
+    const claimDoc = claimSnapshot.docs[0];
+    const claimData = claimDoc.data();
+    
+    const selectedPlan = claimData.selectedPlan;
+    const isYearly = claimData.isYearly;
+    const businessData = claimData.businessData;
+
+    if (!selectedPlan) {
+      throw new Error('No plan selection found in pending claim');
+    }
+
+    // Update user role based on stored plan (upgrade if higher tier)
+    const userRole = PLAN_TO_ROLE[selectedPlan];
+    if (!userRole) {
+      throw new Error(`Unknown plan ID: ${selectedPlan}`);
+    }
+
+    // Get current user role and upgrade if necessary
+    const userRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userRef);
+    
+    if (userDoc.exists()) {
+      const currentUserData = userDoc.data();
+      const currentRole = currentUserData.role || 'Regular User';
+      
+      // Define role hierarchy for upgrades
+      const roleHierarchy: Record<string, number> = {
+        'Regular User': 0,
+        'Enhanced User': 1,
+        'Premium User': 2,
+        'Elite User': 3
+      };
+      
+      const currentLevel = roleHierarchy[currentRole] || 0;
+      const newLevel = roleHierarchy[userRole] || 0;
+      
+      // Only upgrade if the new role is higher
+      if (newLevel > currentLevel) {
+        await setUserRole(user.uid, userRole);
+      }
+    } else {
+      // New user, set initial role
+      await setUserRole(user.uid, userRole);
+    }
+
+    // Log successful payment
     await logPayment({
       userId: user.uid,
       email: params.user_email,
-      planId,
-      isYearly,
-      amount: params.amount,
-      transactionId: params.transaction_id,
-      formId: params.form_id,
-      paymentType: params.payment_type
+      planId: selectedPlan,
+      isYearly: isYearly || false,
+      businessData: businessData
     });
+
+    // Delete the processed pending claim
+    await deleteDoc(claimDoc.ref);
 
     return {
       success: true,
       message: 'Payment processed successfully',
       userRole,
-      planId,
-      isYearly,
-      transactionId: params.transaction_id
+      planId: selectedPlan,
+      isYearly: isYearly || false
     };
 
   } catch (error) {
@@ -105,14 +126,20 @@ export async function processGHLWebhook(params: GHLWebhookParams) {
  * Find user by email - implement this based on your backend
  */
 async function findUserByEmail(email: string): Promise<{ uid: string; email: string } | null> {
-  // This is a placeholder - implement based on your backend
-  // You might query Firebase Auth, your database, etc.
   try {
-    // Example: Query Firebase Auth for user by email
-    // const userRecord = await auth.getUserByEmail(email);
-    // return userRecord;
+    // Query Firestore to find user by email
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', email), limit(1));
+    const querySnapshot = await getDocs(q);
     
-    // For now, return null to indicate not implemented
+    if (!querySnapshot.empty) {
+      const userDoc = querySnapshot.docs[0];
+      return {
+        uid: userDoc.id,
+        email: userDoc.data().email || email
+      };
+    }
+    
     return null;
   } catch (error) {
     console.error('Error finding user by email:', error);
@@ -128,10 +155,7 @@ async function logPayment(paymentData: {
   email: string;
   planId: string;
   isYearly: boolean;
-  amount?: string;
-  transactionId?: string;
-  formId?: string;
-  paymentType: string;
+  businessData?: any;
 }) {
   // This is a placeholder - implement based on your backend
   // You might save to Firestore, your database, etc.

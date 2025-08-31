@@ -42,8 +42,19 @@ All modal iframes now include user email: `?email=${encodeURIComponent(auth.curr
 
 ## 🌐 Backend Webhook Endpoint
 
-### **Express.js Example:**
+### **✅ Implementation Complete:**
+
+The webhook endpoint has been implemented and is ready to receive GHL automation calls.
+
+**Endpoint:** `https://yourdomain.com/api/ghl-webhook`
+
+**Method:** GET
+
+**Response:** JSON with payment processing results
+
+### **Express.js Example (No longer needed - already implemented):**
 ```typescript
+// This is now implemented in /api/ghl-webhook.js
 app.get('/api/ghl-webhook', async (req, res) => {
   const result = await processGHLWebhook(req.query);
   res.json(result);
@@ -52,10 +63,29 @@ app.get('/api/ghl-webhook', async (req, res) => {
 
 ## 🔍 Testing
 
-1. Select plan → Click "Continue to Payment"
-2. Complete payment in iframe
-3. Check webhook endpoint for GET request
-4. Verify user role update
+1. **Select plan** → Click "Continue to Payment"
+2. **Complete payment** in iframe
+3. **Check webhook endpoint** for GET request
+4. **Verify user role update** and business tier assignment
+
+### **Testing the Complete Flow:**
+
+1. **Deploy to Vercel** with the updated configuration
+2. **Set up GHL automation** according to the setup above
+3. **Test business claim flow:**
+   - User selects plan and business
+   - Payment modal opens
+   - User completes payment
+   - GHL sends webhook to `/api/ghl-webhook`
+   - Webhook processes payment and updates user role
+   - User is redirected to business onboarding
+   - Business gets appropriate tier based on user's subscription
+
+### **Monitoring Webhook Calls:**
+
+- Check Vercel function logs for webhook activity
+- Monitor Firestore for pending claims and user role updates
+- Verify business tier assignments in the businesses collection
 
 ## ⚠️ Important Notes
 

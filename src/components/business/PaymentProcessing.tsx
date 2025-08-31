@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Building2, Globe2, Heart, CreditCard, ArrowRight, Loader2, X } from 'lucide-react';
 import { auth, setUserRole } from '../../lib/firebase';
-import { initiateGHLPayment, validateGHLResponse } from '../../lib/ghl-payments';
+import { doc, updateDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import { initiateGHLPayment } from '../../lib/ghl-payments';
 import { v4 as uuidv4 } from 'uuid';
 
 const PLANS = [
@@ -83,7 +85,6 @@ const PLANS = [
 export default function PaymentProcessing() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
   const [selectedPlan, setSelectedPlan] = useState<string>('premium');
   const [isYearly, setIsYearly] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -91,20 +92,6 @@ export default function PaymentProcessing() {
   const [success, setSuccess] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [showModal, setShowModal] = useState<'enhanced' | 'premium' | 'elite' | 'enhanced-annual' | 'premium-annual' | 'elite-annual' | null>(null);
-
-  useEffect(() => {
-    // Handle payment response
-    const status = searchParams.get('status');
-    if (status) {
-      const result = validateGHLResponse(searchParams);
-      if (result.success) {
-        setSuccess(true);
-        handlePaymentSuccess();
-      } else {
-        setError(result.message);
-      }
-    }
-  }, [searchParams]);
 
   const handlePaymentSuccess = async () => {
     if (!auth.currentUser) return;
@@ -141,47 +128,67 @@ export default function PaymentProcessing() {
       return;
     }
 
-    // Check if Monthly Enhanced plan is selected
-    if (selectedPlan === 'enhanced' && !isYearly) {
-      setShowModal('enhanced');
-      return;
-    }
-
-    // Check if Annual Enhanced plan is selected
-    if (selectedPlan === 'enhanced' && isYearly) {
-      setShowModal('enhanced-annual');
-      return;
-    }
-
-    // Check if Monthly Premium plan is selected
-    if (selectedPlan === 'premium' && !isYearly) {
-      setShowModal('premium');
-      return;
-    }
-
-    // Check if Annual Premium plan is selected
-    if (selectedPlan === 'premium' && isYearly) {
-      setShowModal('premium-annual');
-      return;
-    }
-
-    // Check if Monthly Elite plan is selected
-    if (selectedPlan === 'elite' && !isYearly) {
-      setShowModal('elite');
-      return;
-    }
-
-    // Check if Annual Elite plan is selected
-    if (selectedPlan === 'elite' && isYearly) {
-      setShowModal('elite-annual');
-      return;
-    }
-
     setLoading(true);
     setError(null);
     setDebugInfo(null);
 
     try {
+      // Store the selected plan and business data in a pending claims collection
+      const pendingClaimsRef = collection(db, 'pendingClaims');
+      const claimDoc = await addDoc(pendingClaimsRef, {
+        userId: auth.currentUser.uid,
+        userEmail: auth.currentUser.email,
+        selectedPlan: selectedPlan,
+        isYearly: isYearly,
+        planSelectionTimestamp: serverTimestamp(),
+        businessData: location.state?.businessData || null,
+        status: 'pending'
+      });
+
+      setDebugInfo(`Plan selection stored for business claim: ${selectedPlan} (${isYearly ? 'yearly' : 'monthly'})`);
+
+      // Check if Monthly Enhanced plan is selected
+      if (selectedPlan === 'enhanced' && !isYearly) {
+        setShowModal('enhanced');
+        setLoading(false);
+        return;
+      }
+
+      // Check if Annual Enhanced plan is selected
+      if (selectedPlan === 'enhanced' && isYearly) {
+        setShowModal('enhanced-annual');
+        setLoading(false);
+        return;
+      }
+
+      // Check if Monthly Premium plan is selected
+      if (selectedPlan === 'premium' && !isYearly) {
+        setShowModal('premium');
+        setLoading(false);
+        return;
+      }
+
+      // Check if Annual Premium plan is selected
+      if (selectedPlan === 'premium' && isYearly) {
+        setShowModal('premium-annual');
+        setLoading(false);
+        return;
+      }
+
+      // Check if Monthly Elite plan is selected
+      if (selectedPlan === 'elite' && !isYearly) {
+        setShowModal('elite');
+        setLoading(false);
+        return;
+      }
+
+      // Check if Annual Elite plan is selected
+      if (selectedPlan === 'elite' && isYearly) {
+        setShowModal('elite-annual');
+        setLoading(false);
+        return;
+      }
+
       const plan = PLANS.find(p => p.id === selectedPlan);
       if (!plan) throw new Error('Invalid plan selected');
 

@@ -16,6 +16,7 @@
     "@react-google-maps/api": "^2.19.3",
     "@uploadcare/blocks": "0.32.4",
     "@uploadcare/upload-client": "6.12.1",
+    "@vercel/node": "^5.3.17",
     "bad-words": "^3.0.4",
     "country-codes-list": "^1.6.11",
     "date-fns": "^3.3.1",

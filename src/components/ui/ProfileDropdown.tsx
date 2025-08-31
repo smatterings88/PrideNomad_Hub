@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LogOut, ChevronDown, User, Heart, Calendar, Building2, CalendarCheck, Clock } from 'lucide-react';
+import { LogOut, ChevronDown, User, Heart, Calendar, Building2, CalendarCheck, Clock, CreditCard } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import md5 from 'md5';
 import { User as FirebaseUser } from 'firebase/auth';
-import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
 interface ProfileDropdownProps {

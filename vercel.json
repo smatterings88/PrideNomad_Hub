@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/ghl-webhook",
-      "destination": "/api/ghl-webhook.ts"
+      "destination": "/api/ghl-webhook-handler.ts"
     },
     {
       "source": "/(.*)",

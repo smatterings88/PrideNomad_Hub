@@ -54,7 +54,7 @@ The webhook endpoint has been implemented and is ready to receive GHL automation
 
 ### **Express.js Example (No longer needed - already implemented):**
 ```typescript
-// This is now implemented in /api/ghl-webhook.js
+// This is now implemented in /api/ghl-webhook.ts
 app.get('/api/ghl-webhook', async (req, res) => {
   const result = await processGHLWebhook(req.query);
   res.json(result);

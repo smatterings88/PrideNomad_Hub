@@ -1,0 +1,12 @@
+# Exclude frontend source files from Vercel API compilation
+src/
+public/
+index.html
+vite.config.ts
+tailwind.config.js
+postcss.config.js
+tsconfig*.json
+eslint.config.js
+*.test.ts
+*.test.tsx
+__tests__/

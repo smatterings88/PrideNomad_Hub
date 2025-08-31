@@ -1,8 +1,6 @@
 # Exclude ALL frontend source files from Vercel compilation
 src/
 public/
-index.html
-vite.config.ts
 tailwind.config.js
 postcss.config.js
 tsconfig*.json

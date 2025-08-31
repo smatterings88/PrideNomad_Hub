@@ -56,18 +56,47 @@ async function findUserByEmail(email) {
       db = initializeFirebase();
     }
     
+    console.log('Looking for user with email:', email);
+    
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where('email', '==', email), limit(1));
     const querySnapshot = await getDocs(q);
     
+    console.log('Query result - empty:', querySnapshot.empty);
+    console.log('Query result - size:', querySnapshot.size);
+    
     if (!querySnapshot.empty) {
       const userDoc = querySnapshot.docs[0];
+      const userData = userDoc.data();
+      console.log('Found user document:', userData);
+      console.log('User document fields:', Object.keys(userData));
+      
       return {
         userId: userDoc.id,
-        email: userDoc.data().email,
-        role: userDoc.data().role || 'Regular User'
+        email: userData.email,
+        role: userData.role || 'Regular User'
       };
     }
+    
+    // If no user found by email, let's check what users exist
+    console.log('No user found by email, checking all users...');
+    const allUsersQuery = query(usersRef, limit(5));
+    const allUsersSnapshot = await getDocs(allUsersQuery);
+    
+    if (!allUsersSnapshot.empty) {
+      console.log('Sample users in database:');
+      allUsersSnapshot.docs.forEach((doc, index) => {
+        const data = doc.data();
+        console.log(`User ${index + 1}:`, {
+          id: doc.id,
+          fields: Object.keys(data),
+          email: data.email,
+          userEmail: data.userEmail,
+          uid: data.uid
+        });
+      });
+    }
+    
     return null;
   } catch (error) {
     console.error('Error finding user by email:', error);

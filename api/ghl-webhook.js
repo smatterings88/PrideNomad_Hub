@@ -1,15 +1,25 @@
 const { initializeApp } = require('firebase/app');
 const { getFirestore, collection, query, where, getDocs, doc, getDoc, setDoc, deleteDoc, serverTimestamp, addDoc, limit } = require('firebase/firestore');
 
-// Firebase configuration - use environment variables
+// Firebase configuration - use environment variables (without VITE_ prefix for Vercel)
 const firebaseConfig = {
-  apiKey: process.env.VITE_FIREBASE_API_KEY,
-  authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.VITE_FIREBASE_APP_ID
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.FIREBASE_APP_ID
 };
+
+// Validate Firebase configuration
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  console.error('Missing Firebase configuration:', {
+    hasApiKey: !!firebaseConfig.apiKey,
+    hasProjectId: !!firebaseConfig.projectId,
+    envVars: Object.keys(process.env).filter(key => key.includes('FIREBASE'))
+  });
+  throw new Error('Firebase configuration is incomplete');
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

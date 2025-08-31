@@ -55,6 +55,20 @@ service cloud.firestore {
         resource.data.userId == request.auth.uid;
     }
 
+    // Payments collection rules
+    match /payments/{paymentId} {
+      // Allow users to read their own payment records
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      
+      // Allow system to create payment records (via webhook)
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Users cannot modify or delete payment records
+      allow update, delete: if false;
+    }
+
     // Admins collection rules
     match /admins/{adminId} {
       // Allow read access to check admin status

@@ -1,5 +1,4 @@
-# Exclude ALL frontend source files from Vercel compilation
-src/
+# Exclude files that are not needed for Vite build
 public/
 tailwind.config.js
 postcss.config.js

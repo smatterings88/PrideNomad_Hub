@@ -10,7 +10,7 @@ export default defineConfig({
     __BUILD_TIME__: JSON.stringify(new Date().toISOString())
   },
   build: {
-    cssCodeSplit: true,
+    cssCodeSplit: false,
     cssMinify: true,
     rollupOptions: {
       output: {

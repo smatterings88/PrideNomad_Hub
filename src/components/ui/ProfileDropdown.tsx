@@ -3,7 +3,7 @@ import { LogOut, ChevronDown, User, Heart, Calendar, Building2, CalendarCheck, C
 import { Link, useNavigate } from 'react-router-dom';
 import md5 from 'md5';
 import { User as FirebaseUser } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 
 interface ProfileDropdownProps {
@@ -119,6 +119,16 @@ export default function ProfileDropdown({ user, userRole, onSignOut }: ProfileDr
             <CalendarCheck className="h-4 w-4 mr-2" />
             My Events
           </Link>
+          {hasPendingClaims && (
+            <Link
+              to="/pending-claims"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center px-4 py-2 text-amber-700 hover:bg-amber-50 transition-colors"
+            >
+              <Clock className="h-4 w-4 mr-2" />
+              Pending Claims
+            </Link>
+          )}
           <button
             onClick={() => {
               setIsOpen(false);

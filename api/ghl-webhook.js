@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs, doc, setDoc, deleteDoc, serverTimestamp, addDoc, limit } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, doc, setDoc, deleteDoc, serverTimestamp, addDoc, limit, getDoc } from 'firebase/firestore';
 
 // Initialize Firebase safely
 let db = null;
@@ -49,7 +49,7 @@ const roleHierarchy = {
   'Elite User': 4
 };
 
-// Find user by email
+// Find user by email (actually by document ID from pending claim)
 async function findUserByEmail(email) {
   try {
     if (!db) {
@@ -58,46 +58,51 @@ async function findUserByEmail(email) {
     
     console.log('Looking for user with email:', email);
     
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('email', '==', email), limit(1));
-    const querySnapshot = await getDocs(q);
+    // First, find the pending claim to get the userId
+    const pendingClaimsRef = collection(db, 'pendingClaims');
+    const claimQuery = query(
+      pendingClaimsRef, 
+      where('userEmail', '==', email),
+      where('status', '==', 'pending'),
+      limit(1)
+    );
+    const claimSnapshot = await getDocs(claimQuery);
     
-    console.log('Query result - empty:', querySnapshot.empty);
-    console.log('Query result - size:', querySnapshot.size);
-    
-    if (!querySnapshot.empty) {
-      const userDoc = querySnapshot.docs[0];
-      const userData = userDoc.data();
-      console.log('Found user document:', userData);
-      console.log('User document fields:', Object.keys(userData));
-      
-      return {
-        userId: userDoc.id,
-        email: userData.email,
-        role: userData.role || 'Regular User'
-      };
+    if (claimSnapshot.empty) {
+      console.log('No pending claim found for email:', email);
+      return null;
     }
     
-    // If no user found by email, let's check what users exist
-    console.log('No user found by email, checking all users...');
-    const allUsersQuery = query(usersRef, limit(5));
-    const allUsersSnapshot = await getDocs(allUsersQuery);
+    const claimDoc = claimSnapshot.docs[0];
+    const claimData = claimDoc.data();
+    const userId = claimData.userId;
     
-    if (!allUsersSnapshot.empty) {
-      console.log('Sample users in database:');
-      allUsersSnapshot.docs.forEach((doc, index) => {
-        const data = doc.data();
-        console.log(`User ${index + 1}:`, {
-          id: doc.id,
-          fields: Object.keys(data),
-          email: data.email,
-          userEmail: data.userEmail,
-          uid: data.uid
-        });
-      });
+    console.log('Found pending claim with userId:', userId);
+    
+    if (!userId) {
+      console.log('No userId found in pending claim');
+      return null;
     }
     
-    return null;
+    // Now get the user document by ID
+    const userRef = doc(db, 'users', userId);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      console.log('User document not found for userId:', userId);
+      return null;
+    }
+    
+    const userData = userDoc.data();
+    console.log('Found user document:', userData);
+    console.log('User document fields:', Object.keys(userData));
+    
+    return {
+      userId: userDoc.id,
+      email: email, // Use the email from the pending claim
+      role: userData.role || 'Regular User'
+    };
+    
   } catch (error) {
     console.error('Error finding user by email:', error);
     return null;

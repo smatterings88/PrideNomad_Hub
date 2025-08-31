@@ -35,10 +35,12 @@ import { SkipLink } from './components/ui/SkipLink';
 import { CookieConsent } from './components/CookieConsent';
 import { OfflineNotice } from './components/ui/OfflineNotice';
 import GoogleMapsProvider from './components/GoogleMapsProvider';
+import TailwindTest from './TailwindTest';
 
 function App() {
   return (
     <ErrorBoundary>
+      <TailwindTest />
       <Router>
         <GoogleMapsProvider>
           <SkipLink />

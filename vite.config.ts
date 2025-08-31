@@ -10,8 +10,8 @@ export default defineConfig({
     __BUILD_TIME__: JSON.stringify(new Date().toISOString())
   },
   build: {
-    cssCodeSplit: false,
-    cssMinify: true,
+    cssCodeSplit: true,
+    cssMinify: false,
     rollupOptions: {
       output: {
         manualChunks: {

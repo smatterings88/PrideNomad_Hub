@@ -97,7 +97,7 @@ service cloud.firestore {
       // Allow authenticated users to create business listings
       allow create: if isAuthenticated();
       
-      // Allow users to update their own business listings or if they are admin
+      // Allow users to update their own business listings, admins, or webhook
       allow update: if isAuthenticated() && (
         isOwner(resource.data.userId) || 
         isUnclaimed() || 
@@ -112,7 +112,7 @@ service cloud.firestore {
         )
       ) ||
       // Allow webhook to update business documents (server-side operation)
-      allow update: if true;
+      true;
       
       // Allow users to delete their own business listings or if they are admin
       allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isUnclaimed() || isAdmin());

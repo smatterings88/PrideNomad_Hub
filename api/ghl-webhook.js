@@ -163,6 +163,12 @@ async function processGHLWebhook(params) {
     const businessData = claimData.businessData;
 
     console.log('Found pending claim:', { selectedPlan, isYearly, businessData });
+    console.log('Webhook Debug - Business data structure:', {
+      hasBusinessData: !!businessData,
+      businessId: businessData?.id,
+      businessName: businessData?.businessName,
+      allBusinessFields: businessData ? Object.keys(businessData) : 'No business data'
+    });
 
     // Find user by email
     const user = await findUserByEmail(params.user_email);
@@ -225,7 +231,7 @@ async function processGHLWebhook(params) {
         
         // Ensure businessName exists - if not, use a default or the business ID
         if (!businessData.businessName || businessData.businessName.trim() === '') {
-          updateData.businessName = businessData.businessName || `Business ${businessData.id}`;
+          updateData.businessName = `Business ${businessData.id}`;
         }
         
         // Ensure other required fields exist for MyListings display
@@ -248,6 +254,7 @@ async function processGHLWebhook(params) {
         await updateDoc(businessRef, updateData);
         
         console.log(`Business ${businessData.id} updated successfully with tier: ${businessTier}`);
+        console.log('Webhook Debug - Update data sent:', updateData);
       } catch (businessUpdateError) {
         console.error('Error updating business document:', businessUpdateError);
       }

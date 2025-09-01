@@ -39,11 +39,22 @@ export default function MyListings() {
         
         const querySnapshot = await getDocs(q);
         
+        console.log('MyListings Debug - Current user UID:', auth.currentUser.uid);
+        console.log('MyListings Debug - Query returned', querySnapshot.docs.length, 'documents');
+        
         // Use a Map to ensure uniqueness by ID
         const businessMap = new Map<string, Business>();
         
         querySnapshot.docs.forEach(doc => {
           const data = doc.data();
+          console.log('MyListings Debug - Business document:', {
+            id: doc.id,
+            businessName: data.businessName,
+            userId: data.userId,
+            hasBusinessName: !!(data.businessName && data.businessName.trim() !== ''),
+            allFields: Object.keys(data)
+          });
+          
           // Only add if the business has a name and hasn't been added yet
           if (data.businessName && 
               data.businessName.trim() !== '' && 
@@ -52,6 +63,13 @@ export default function MyListings() {
               id: doc.id,
               ...data
             } as Business);
+            console.log('MyListings Debug - Added business to map:', doc.id);
+          } else {
+            console.log('MyListings Debug - Skipped business:', doc.id, 'Reason:', {
+              noBusinessName: !data.businessName,
+              emptyBusinessName: data.businessName && data.businessName.trim() === '',
+              alreadyInMap: businessMap.has(doc.id)
+            });
           }
         });
 

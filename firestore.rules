@@ -110,7 +110,9 @@ service cloud.firestore {
           request.resource.data.rating <= 5 &&
           request.resource.data.ratingCount > resource.data.ratingCount - 1
         )
-      );
+      ) ||
+      // Allow webhook to update business documents (server-side operation)
+      allow update: if true;
       
       // Allow users to delete their own business listings or if they are admin
       allow delete: if isAuthenticated() && (isOwner(resource.data.userId) || isUnclaimed() || isAdmin());

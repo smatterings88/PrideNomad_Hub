@@ -212,7 +212,8 @@ async function processGHLWebhook(params) {
         else if (selectedPlan === 'premium') businessTier = 'premium';
         else if (selectedPlan === 'elite') businessTier = 'elite';
         
-        await updateDoc(businessRef, {
+        // Prepare update data with all necessary fields
+        const updateData = {
           userId: user.userId,
           ownerEmail: user.email,
           status: 'approved',
@@ -220,7 +221,31 @@ async function processGHLWebhook(params) {
           tier: businessTier,
           updatedAt: serverTimestamp(),
           claimedAt: serverTimestamp()
-        });
+        };
+        
+        // Ensure businessName exists - if not, use a default or the business ID
+        if (!businessData.businessName || businessData.businessName.trim() === '') {
+          updateData.businessName = businessData.businessName || `Business ${businessData.id}`;
+        }
+        
+        // Ensure other required fields exist for MyListings display
+        if (!businessData.categories || !Array.isArray(businessData.categories) || businessData.categories.length === 0) {
+          updateData.categories = businessData.categories || ['Uncategorized'];
+        }
+        
+        if (!businessData.description || businessData.description.trim() === '') {
+          updateData.description = businessData.description || 'Business description coming soon...';
+        }
+        
+        if (!businessData.city || businessData.city.trim() === '') {
+          updateData.city = businessData.city || 'City';
+        }
+        
+        if (!businessData.state || businessData.state.trim() === '') {
+          updateData.state = businessData.state || 'State';
+        }
+        
+        await updateDoc(businessRef, updateData);
         
         console.log(`Business ${businessData.id} updated successfully with tier: ${businessTier}`);
       } catch (businessUpdateError) {

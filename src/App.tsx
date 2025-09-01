@@ -260,7 +260,7 @@ function App() {
           <Route
             path="/edit-business/:id"
             element={
-              <ProtectedRoute allowedEmail="mgzobel@icloud.com">
+              <ProtectedRoute>
                 <>
                   <Header />
                   <main id="main-content">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { collection, query, getDocs, doc, getDoc } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { collection, query, getDocs, doc, getDoc, where } from 'firebase/firestore';
+import { db, auth } from '../../lib/firebase';
 import BusinessOnboarding from './BusinessOnboarding';
 import { Search, MapPin, Building2 } from 'lucide-react';
 import Breadcrumb from '../ui/Breadcrumb';
@@ -55,7 +55,17 @@ export default function EditBusiness() {
   useEffect(() => {
     const fetchBusinesses = async () => {
       try {
-        const q = query(collection(db, 'businesses'));
+        if (!auth.currentUser) {
+          setError('You must be signed in to view businesses');
+          navigate('/');
+          return;
+        }
+
+        // Only fetch businesses owned by the current user
+        const q = query(
+          collection(db, 'businesses'),
+          where('userId', '==', auth.currentUser.uid)
+        );
         const querySnapshot = await getDocs(q);
         const businessesData = querySnapshot.docs.map(doc => ({
           id: doc.id,
@@ -83,6 +93,24 @@ export default function EditBusiness() {
               id: businessDoc.id,
               ...businessDoc.data()
             } as Business;
+
+            // Check if user is authorized to edit this business
+            if (!auth.currentUser) {
+              setError('You must be signed in to edit a business');
+              navigate('/');
+              return;
+            }
+
+            // Allow editing if user owns the business or is an admin
+            const isOwner = businessData.userId === auth.currentUser.uid;
+            const isAdmin = auth.currentUser.email === 'mgzobel@icloud.com' || 
+                           auth.currentUser.email === 'kenergizer@mac.com';
+
+            if (!isOwner && !isAdmin) {
+              setError('You are not authorized to edit this business');
+              navigate('/');
+              return;
+            }
 
             // Ensure all required fields exist with default values
             const defaultedBusiness = {

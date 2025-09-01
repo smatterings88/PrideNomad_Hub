@@ -212,6 +212,14 @@ async function processGHLWebhook(params) {
       try {
         const businessRef = doc(db, 'businesses', businessData.id);
         
+        // First, let's check what the current business document looks like
+        const currentBusinessDoc = await getDoc(businessRef);
+        if (currentBusinessDoc.exists()) {
+          console.log('Webhook Debug - Current business document before update:', currentBusinessDoc.data());
+        } else {
+          console.log('Webhook Debug - Business document does not exist:', businessData.id);
+        }
+        
         // Map plan to business tier
         let businessTier = 'essentials';
         if (selectedPlan === 'enhanced') businessTier = 'enhanced';

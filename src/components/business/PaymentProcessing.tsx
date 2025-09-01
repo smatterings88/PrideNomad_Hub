@@ -311,13 +311,7 @@ export default function PaymentProcessing() {
           <p className="text-surface-600 mb-6">
             Thank you for your payment. You will be redirected to complete your business listing.
           </p>
-          {debugInfo && (
-            <div className="mb-6 p-3 bg-blue-100 text-blue-700 rounded-md text-sm text-left whitespace-pre-line">
-              <strong>Debug Info:</strong>
-              <br />
-              {debugInfo}
-            </div>
-          )}
+
           <div className="animate-pulse">
             <Globe2 className="h-6 w-6 text-primary-600 mx-auto" />
           </div>
@@ -458,16 +452,7 @@ export default function PaymentProcessing() {
           </div>
         )}
 
-        {/* Debug Info */}
-        {debugInfo && (
-          <div className="max-w-2xl mx-auto mb-8">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-blue-700 whitespace-pre-line">
-              <strong>Debug Info:</strong>
-              <br />
-              {debugInfo}
-            </div>
-          </div>
-        )}
+
 
         {/* Continue Button */}
         <div className="max-w-2xl mx-auto">

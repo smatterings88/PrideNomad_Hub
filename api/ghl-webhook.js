@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, query, where, getDocs, doc, setDoc, deleteDoc, serverTimestamp, addDoc, limit, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, query, where, getDocs, doc, setDoc, deleteDoc, serverTimestamp, addDoc, limit, getDoc, updateDoc } from 'firebase/firestore';
 
 // Initialize Firebase safely
 let db = null;
@@ -201,6 +201,43 @@ async function processGHLWebhook(params) {
       businessData: businessData
     });
 
+    // Update the business document if businessData exists
+    if (businessData && businessData.id) {
+      try {
+        const businessRef = doc(db, 'businesses', businessData.id);
+        
+        // Map plan to business tier
+        let businessTier = 'essentials';
+        if (selectedPlan === 'enhanced') businessTier = 'enhanced';
+        else if (selectedPlan === 'premium') businessTier = 'premium';
+        else if (selectedPlan === 'elite') businessTier = 'elite';
+        
+        await updateDoc(businessRef, {
+          userId: user.userId,
+          ownerEmail: user.email,
+          status: 'approved',
+          verified: true,
+          tier: businessTier,
+          updatedAt: serverTimestamp(),
+          claimedAt: serverTimestamp()
+        });
+        
+        console.log(`Business ${businessData.id} updated successfully with tier: ${businessTier}`);
+      } catch (businessUpdateError) {
+        console.error('Error updating business document:', businessUpdateError);
+      }
+    }
+
+    // Update user with payment success notification
+    const userRef = doc(db, 'users', user.userId);
+    await setDoc(userRef, { 
+      role: newRole,
+      lastPayment: serverTimestamp(),
+      lastPaymentAt: serverTimestamp(),
+      paymentSuccess: true,
+      paymentSuccessAt: serverTimestamp()
+    }, { merge: true });
+
     // Delete the processed pending claim
     await deleteDoc(claimDoc.ref);
     console.log('Pending claim deleted');
@@ -210,7 +247,8 @@ async function processGHLWebhook(params) {
       message: 'Payment processed successfully',
       userRole: newRole,
       plan: selectedPlan,
-      isYearly: isYearly
+      isYearly: isYearly,
+      businessUpdated: !!(businessData && businessData.id)
     };
 
   } catch (error) {

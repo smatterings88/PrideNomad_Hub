@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Building2, Globe2, Heart, CreditCard, ArrowRight, Loader2, X } from 'lucide-react';
 import { auth, setUserRole } from '../../lib/firebase';
-import { doc, updateDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, collection, addDoc, getDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { initiateGHLPayment } from '../../lib/ghl-payments';
 import { v4 as uuidv4 } from 'uuid';
@@ -92,6 +92,7 @@ export default function PaymentProcessing() {
   const [success, setSuccess] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [showModal, setShowModal] = useState<'enhanced' | 'premium' | 'elite' | 'enhanced-annual' | 'premium-annual' | 'elite-annual' | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   // Check if user is coming from pending claims
   useEffect(() => {
@@ -102,6 +103,65 @@ export default function PaymentProcessing() {
       setDebugInfo('Resuming payment from pending claim');
     }
   }, [location.state]);
+
+  // Poll for payment success when modal is open
+  useEffect(() => {
+    if (showModal && auth.currentUser) {
+      const checkPaymentSuccess = async () => {
+        try {
+          if (!auth.currentUser) return;
+          
+          const userRef = doc(db, 'users', auth.currentUser.uid);
+          const userDoc = await getDoc(userRef);
+          
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.paymentSuccess && userData.paymentSuccessAt) {
+              // Check if payment success is recent (within last 5 minutes)
+              const successTime = userData.paymentSuccessAt.toDate();
+              const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+              
+              if (successTime > fiveMinutesAgo) {
+                setPaymentSuccess(true);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error checking payment success:', error);
+        }
+      };
+
+      // Check every 2 seconds while modal is open
+      const interval = setInterval(checkPaymentSuccess, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [showModal, auth.currentUser]);
+
+  // Handle continue to business setup
+  const handleContinueToBusiness = async () => {
+    try {
+      // Clear the payment success flag
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userRef, { paymentSuccess: false });
+      }
+      
+      setShowModal(null);
+      setPaymentSuccess(false);
+      
+      // Redirect to edit business page
+      const businessData = location.state?.businessData;
+      if (businessData?.id) {
+        navigate(`/edit-business/${businessData.id}`, { 
+          state: { businessData, mode: 'edit' } 
+        });
+      } else {
+        navigate('/list-business');
+      }
+    } catch (error) {
+      console.error('Error clearing payment success flag:', error);
+    }
+  };
 
   const handlePaymentSuccess = async () => {
     if (!auth.currentUser) return;
@@ -437,252 +497,360 @@ export default function PaymentProcessing() {
       {/* Enhanced Monthly Modal */}
       {showModal === 'enhanced' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-surface-200">
-              <h3 className="text-xl font-semibold text-surface-900">
-                Complete Your Enhanced Monthly Subscription
-              </h3>
-              <button
-                onClick={() => setShowModal(null)}
-                className="text-surface-400 hover:text-surface-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="w-full h-[600px]">
-                <iframe
-                  src={`https://api.leadconnectorhq.com/widget/form/76w8gDbB9tIqqquy8eX1?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
-                  style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
-                  id="inline-76w8gDbB9tIqqquy8eX1" 
-                  data-layout="{'id':'INLINE'}"
-                  data-trigger-type="alwaysShow"
-                  data-trigger-value=""
-                  data-activation-type="alwaysActivated"
-                  data-activation-value=""
-                  data-deactivation-type="neverDeactivate"
-                  data-deactivation-value=""
-                  data-form-name="PNH Enhanced Monthly"
-                  data-height="863"
-                  data-layout-iframe-id="inline-76w8gDbB9tIqqquy8eX1"
-                  data-form-id="76w8gDbB9tIqqquy8eX1"
-                  title="PNH Enhanced Monthly"
+          {!paymentSuccess ? (
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-surface-200">
+                <h3 className="text-xl font-semibold text-surface-900">
+                  Complete Your Enhanced Monthly Subscription
+                </h3>
+                <button
+                  onClick={() => setShowModal(null)}
+                  className="text-surface-400 hover:text-surface-600 transition-colors"
                 >
-                </iframe>
-                <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="w-full h-[600px]">
+                  <iframe
+                    src={`https://api.leadconnectorhq.com/widget/form/76w8gDbB9tIqqquy8eX1?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
+                    style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
+                    id="inline-76w8gDbB9tIqqquy8eX1" 
+                    data-layout="{'id':'INLINE'}"
+                    data-trigger-type="alwaysShow"
+                    data-trigger-value=""
+                    data-activation-type="alwaysActivated"
+                    data-activation-value=""
+                    data-deactivation-type="neverDeactivate"
+                    data-deactivation-value=""
+                    data-form-name="PNH Enhanced Monthly"
+                    data-height="863"
+                    data-layout-iframe-id="inline-76w8gDbB9tIqqquy8eX1"
+                    data-form-id="76w8gDbB9tIqqquy8eX1"
+                    title="PNH Enhanced Monthly"
+                  >
+                  </iframe>
+                  <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-surface-900 mb-2">Payment Successful!</h3>
+              <p className="text-surface-600 mb-6">
+                Your Enhanced Monthly subscription has been activated and your business is ready to set up.
+              </p>
+              <button
+                onClick={handleContinueToBusiness}
+                className="w-full bg-primary-500 text-white py-3 px-4 rounded-md hover:bg-primary-600 transition-colors"
+              >
+                Continue to Business Setup
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Enhanced Annual Modal */}
       {showModal === 'enhanced-annual' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-surface-200">
-              <h3 className="text-xl font-semibold text-surface-900">
-                Complete Your Enhanced Annual Subscription
-              </h3>
-              <button
-                onClick={() => setShowModal(null)}
-                className="text-surface-400 hover:text-surface-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="w-full h-[600px]">
-                <iframe
-                  src={`https://api.leadconnectorhq.com/widget/form/tchR4XYrDJys2IWf2jfp?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
-                  style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
-                  id="inline-tchR4XYrDJys2IWf2jfp" 
-                  data-layout="{'id':'INLINE'}"
-                  data-trigger-type="alwaysShow"
-                  data-trigger-value=""
-                  data-activation-type="alwaysActivated"
-                  data-activation-value=""
-                  data-deactivation-type="neverDeactivate"
-                  data-deactivation-value=""
-                  data-form-name="PNH Enhanced Annual"
-                  data-height="859"
-                  data-layout-iframe-id="inline-tchR4XYrDJys2IWf2jfp"
-                  data-form-id="tchR4XYrDJys2IWf2jfp"
-                  title="PNH Enhanced Annual"
+          {!paymentSuccess ? (
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-surface-200">
+                <h3 className="text-xl font-semibold text-surface-900">
+                  Complete Your Enhanced Annual Subscription
+                </h3>
+                <button
+                  onClick={() => setShowModal(null)}
+                  className="text-surface-400 hover:text-surface-600 transition-colors"
                 >
-                </iframe>
-                <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="w-full h-[600px]">
+                  <iframe
+                    src={`https://api.leadconnectorhq.com/widget/form/tchR4XYrDJys2IWf2jfp?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
+                    style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
+                    id="inline-tchR4XYrDJys2IWf2jfp" 
+                    data-layout="{'id':'INLINE'}"
+                    data-trigger-type="alwaysShow"
+                    data-trigger-value=""
+                    data-activation-type="alwaysActivated"
+                    data-activation-value=""
+                    data-deactivation-type="neverDeactivate"
+                    data-deactivation-value=""
+                    data-form-name="PNH Enhanced Annual"
+                    data-height="859"
+                    data-layout-iframe-id="inline-tchR4XYrDJys2IWf2jfp"
+                    data-form-id="tchR4XYrDJys2IWf2jfp"
+                    title="PNH Enhanced Annual"
+                  >
+                  </iframe>
+                  <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-surface-900 mb-2">Payment Successful!</h3>
+              <p className="text-surface-600 mb-6">
+                Your Enhanced Annual subscription has been activated and your business is ready to set up.
+              </p>
+              <button
+                onClick={handleContinueToBusiness}
+                className="w-full bg-primary-500 text-white py-3 px-4 rounded-md hover:bg-primary-600 transition-colors"
+              >
+                Continue to Business Setup
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Premium Monthly Modal */}
       {showModal === 'premium' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-surface-200">
-              <h3 className="text-xl font-semibold text-surface-900">
-                Complete Your Premium Monthly Subscription
-              </h3>
-              <button
-                onClick={() => setShowModal(null)}
-                className="text-surface-400 hover:text-surface-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="w-full h-[600px]">
-                <iframe
-                  src={`https://api.leadconnectorhq.com/widget/form/GcGS1K6TlSefkrzBlLgf?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
-                  style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
-                  id="inline-GcGS1K6TlSefkrzBlLgf" 
-                  data-layout="{'id':'INLINE'}"
-                  data-trigger-type="alwaysShow"
-                  data-trigger-value=""
-                  data-activation-type="alwaysActivated"
-                  data-activation-value=""
-                  data-deactivation-type="neverDeactivate"
-                  data-deactivation-value=""
-                  data-form-name="PNH Premium Monthly"
-                  data-height="861"
-                  data-layout-iframe-id="inline-GcGS1K6TlSefkrzBlLgf"
-                  data-form-id="GcGS1K6TlSefkrzBlLgf"
-                  title="PNH Premium Monthly"
+          {!paymentSuccess ? (
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-surface-200">
+                <h3 className="text-xl font-semibold text-surface-900">
+                  Complete Your Premium Monthly Subscription
+                </h3>
+                <button
+                  onClick={() => setShowModal(null)}
+                  className="text-surface-400 hover:text-surface-600 transition-colors"
                 >
-                </iframe>
-                <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="w-full h-[600px]">
+                  <iframe
+                    src={`https://api.leadconnectorhq.com/widget/form/GcGS1K6TlSefkrzBlLgf?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
+                    style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
+                    id="inline-GcGS1K6TlSefkrzBlLgf" 
+                    data-layout="{'id':'INLINE'}"
+                    data-trigger-type="alwaysShow"
+                    data-trigger-value=""
+                    data-activation-type="alwaysActivated"
+                    data-activation-value=""
+                    data-deactivation-type="neverDeactivate"
+                    data-deactivation-value=""
+                    data-form-name="PNH Premium Monthly"
+                    data-height="861"
+                    data-layout-iframe-id="inline-GcGS1K6TlSefkrzBlLgf"
+                    data-form-id="GcGS1K6TlSefkrzBlLgf"
+                    title="PNH Premium Monthly"
+                  >
+                  </iframe>
+                  <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-surface-900 mb-2">Payment Successful!</h3>
+              <p className="text-surface-600 mb-6">
+                Your Premium Monthly subscription has been activated and your business is ready to set up.
+              </p>
+              <button
+                onClick={handleContinueToBusiness}
+                className="w-full bg-primary-500 text-white py-3 px-4 rounded-md hover:bg-primary-600 transition-colors"
+              >
+                Continue to Business Setup
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Premium Annual Modal */}
       {showModal === 'premium-annual' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-surface-200">
-              <h3 className="text-xl font-semibold text-surface-900">
-                Complete Your Premium Annual Subscription
-              </h3>
-              <button
-                onClick={() => setShowModal(null)}
-                className="text-surface-400 hover:text-surface-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="w-full h-[600px]">
-                <iframe
-                  src={`https://api.leadconnectorhq.com/widget/form/GBDAzcqfKIKfgsV9jz6c?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
-                  style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
-                  id="inline-GBDAzcqfKIKfgsV9jz6c" 
-                  data-layout="{'id':'INLINE'}"
-                  data-trigger-type="alwaysShow"
-                  data-trigger-value=""
-                  data-activation-type="alwaysActivated"
-                  data-activation-value=""
-                  data-deactivation-type="neverDeactivate"
-                  data-deactivation-value=""
-                  data-form-name="PNH Premium Annual"
-                  data-height="861"
-                  data-layout-iframe-id="inline-GBDAzcqfKIKfgsV9jz6c"
-                  data-form-id="GBDAzcqfKIKfgsV9jz6c"
-                  title="PNH Premium Annual"
+          {!paymentSuccess ? (
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-surface-200">
+                <h3 className="text-xl font-semibold text-surface-900">
+                  Complete Your Premium Annual Subscription
+                </h3>
+                <button
+                  onClick={() => setShowModal(null)}
+                  className="text-surface-400 hover:text-surface-600 transition-colors"
                 >
-                </iframe>
-                <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="w-full h-[600px]">
+                  <iframe
+                    src={`https://api.leadconnectorhq.com/widget/form/GBDAzcqfKIKfgsV9jz6c?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
+                    style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
+                    id="inline-GBDAzcqfKIKfgsV9jz6c" 
+                    data-layout="{'id':'INLINE'}"
+                    data-trigger-type="alwaysShow"
+                    data-trigger-value=""
+                    data-activation-type="alwaysActivated"
+                    data-activation-value=""
+                    data-deactivation-type="neverDeactivate"
+                    data-deactivation-value=""
+                    data-form-name="PNH Premium Annual"
+                    data-height="861"
+                    data-layout-iframe-id="inline-GBDAzcqfKIKfgsV9jz6c"
+                    data-form-id="GBDAzcqfKIKfgsV9jz6c"
+                    title="PNH Premium Annual"
+                  >
+                  </iframe>
+                  <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-surface-900 mb-2">Payment Successful!</h3>
+              <p className="text-surface-600 mb-6">
+                Your Premium Annual subscription has been activated and your business is ready to set up.
+              </p>
+              <button
+                onClick={handleContinueToBusiness}
+                className="w-full bg-primary-500 text-white py-3 px-4 rounded-md hover:bg-primary-600 transition-colors"
+              >
+                Continue to Business Setup
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Elite Monthly Modal */}
       {showModal === 'elite' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-surface-200">
-              <h3 className="text-xl font-semibold text-surface-900">
-                Complete Your Elite Monthly Subscription
-              </h3>
-              <button
-                onClick={() => setShowModal(null)}
-                className="text-surface-400 hover:text-surface-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="w-full h-[600px]">
-                <iframe
-                  src={`https://api.leadconnectorhq.com/widget/form/XzGBbFvFm1sFPaj59fpq?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
-                  style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
-                  id="inline-XzGBbFvFm1sFPaj59fpq" 
-                  data-layout="{'id':'INLINE'}"
-                  data-trigger-type="alwaysShow"
-                  data-trigger-value=""
-                  data-activation-type="alwaysActivated"
-                  data-activation-value=""
-                  data-deactivation-type="neverDeactivate"
-                  data-deactivation-value=""
-                  data-form-name="PNH Elite Monthly"
-                  data-height="861"
-                  data-layout-iframe-id="inline-XzGBbFvFm1sFPaj59fpq"
-                  data-form-id="XzGBbFvFm1sFPaj59fpq"
-                  title="PNH Elite Monthly"
+          {!paymentSuccess ? (
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-surface-200">
+                <h3 className="text-xl font-semibold text-surface-900">
+                  Complete Your Elite Monthly Subscription
+                </h3>
+                <button
+                  onClick={() => setShowModal(null)}
+                  className="text-surface-400 hover:text-surface-600 transition-colors"
                 >
-                </iframe>
-                <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="w-full h-[600px]">
+                  <iframe
+                    src={`https://api.leadconnectorhq.com/widget/form/XzGBbFvFm1sFPaj59fpq?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
+                    style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
+                    id="inline-XzGBbFvFm1sFPaj59fpq" 
+                    data-layout="{'id':'INLINE'}"
+                    data-trigger-type="alwaysShow"
+                    data-trigger-value=""
+                    data-activation-type="alwaysActivated"
+                    data-activation-value=""
+                    data-deactivation-type="neverDeactivate"
+                    data-deactivation-value=""
+                    data-form-name="PNH Elite Monthly"
+                    data-height="861"
+                    data-layout-iframe-id="inline-XzGBbFvFm1sFPaj59fpq"
+                    data-form-id="XzGBbFvFm1sFPaj59fpq"
+                    title="PNH Elite Monthly"
+                  >
+                  </iframe>
+                  <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-surface-900 mb-2">Payment Successful!</h3>
+              <p className="text-surface-600 mb-6">
+                Your Elite Monthly subscription has been activated and your business is ready to set up.
+              </p>
+              <button
+                onClick={handleContinueToBusiness}
+                className="w-full bg-primary-500 text-white py-3 px-4 rounded-md hover:bg-primary-600 transition-colors"
+              >
+                Continue to Business Setup
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Elite Annual Modal */}
       {showModal === 'elite-annual' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-surface-200">
-              <h3 className="text-xl font-semibold text-surface-900">
-                Complete Your Elite Annual Subscription
-              </h3>
-              <button
-                onClick={() => setShowModal(null)}
-                className="text-surface-400 hover:text-surface-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            <div className="p-6">
-              <div className="w-full h-[600px]">
-                <iframe
-                  src={`https://api.leadconnectorhq.com/widget/form/DTHRDPzdUyPqiPoget0n?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
-                  style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
-                  id="inline-DTHRDPzdUyPqiPoget0n" 
-                  data-layout="{'id':'INLINE'}"
-                  data-trigger-type="alwaysShow"
-                  data-trigger-value=""
-                  data-activation-type="alwaysActivated"
-                  data-activation-value=""
-                  data-deactivation-type="neverDeactivate"
-                  data-deactivation-value=""
-                  data-form-name="PNH Elite Annual"
-                  data-height="861"
-                  data-layout-iframe-id="inline-DTHRDPzdUyPqiPoget0n"
-                  data-form-id="DTHRDPzdUyPqiPoget0n"
-                  title="PNH Elite Annual"
+          {!paymentSuccess ? (
+            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-surface-200">
+                <h3 className="text-xl font-semibold text-surface-900">
+                  Complete Your Elite Annual Subscription
+                </h3>
+                <button
+                  onClick={() => setShowModal(null)}
+                  className="text-surface-400 hover:text-surface-600 transition-colors"
                 >
-                </iframe>
-                <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="p-6">
+                <div className="w-full h-[600px]">
+                  <iframe
+                    src={`https://api.leadconnectorhq.com/widget/form/DTHRDPzdUyPqiPoget0n?email=${encodeURIComponent(auth.currentUser?.email || '')}`}
+                    style={{width:'100%',height:'100%',border:'none',borderRadius:'3px'}}
+                    id="inline-DTHRDPzdUyPqiPoget0n" 
+                    data-layout="{'id':'INLINE'}"
+                    data-trigger-type="alwaysShow"
+                    data-trigger-value=""
+                    data-activation-type="alwaysActivated"
+                    data-activation-value=""
+                    data-deactivation-type="neverDeactivate"
+                    data-deactivation-value=""
+                    data-form-name="PNH Elite Annual"
+                    data-height="861"
+                    data-layout-iframe-id="inline-DTHRDPzdUyPqiPoget0n"
+                    data-form-id="DTHRDPzdUyPqiPoget0n"
+                    title="PNH Elite Annual"
+                  >
+                  </iframe>
+                  <script src="https://link.msgsndr.com/js/form_embed.js"></script>
+                </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-surface-900 mb-2">Payment Successful!</h3>
+              <p className="text-surface-600 mb-6">
+                Your Elite Annual subscription has been activated and your business is ready to set up.
+              </p>
+              <button
+                onClick={handleContinueToBusiness}
+                className="w-full bg-primary-500 text-white py-3 px-4 rounded-md hover:bg-primary-600 transition-colors"
+              >
+                Continue to Business Setup
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
